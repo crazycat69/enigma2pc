@@ -1108,6 +1108,7 @@ void PutSatelliteDataToDict(ePyObject &dict, iDVBFrontendParameters *oparm)
 		{
 			PutToDict(dict, "rolloff", feparm.rolloff);
 			PutToDict(dict, "pilot", feparm.pilot);
+			PutToDict(dict, "is_id", feparm.is_id);
 		}
 		PutToDict(dict, "system", feparm.system);
 	}
@@ -1369,8 +1370,6 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 					case FEC_4_5: tmp = eDVBFrontendParametersTerrestrial::FEC_4_5; break;
 					case FEC_5_6: tmp = eDVBFrontendParametersTerrestrial::FEC_5_6; break;
 					case FEC_7_8: tmp = eDVBFrontendParametersTerrestrial::FEC_7_8; break;
-					case FEC_8_9: tmp = eDVBFrontendParametersTerrestrial::FEC_8_9; break;
-					case FEC_9_10: tmp = eDVBFrontendParametersTerrestrial::FEC_9_10; break;
 					default:
 					case FEC_AUTO: tmp = eDVBFrontendParametersTerrestrial::FEC_Auto; break;
 				}
@@ -1386,8 +1385,6 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 					case FEC_4_5: tmp = eDVBFrontendParametersTerrestrial::FEC_4_5; break;
 					case FEC_5_6: tmp = eDVBFrontendParametersTerrestrial::FEC_5_6; break;
 					case FEC_7_8: tmp = eDVBFrontendParametersTerrestrial::FEC_7_8; break;
-					case FEC_8_9: tmp = eDVBFrontendParametersTerrestrial::FEC_8_9; break;
-					case FEC_9_10: tmp = eDVBFrontendParametersTerrestrial::FEC_9_10; break;
 					default:
 					case FEC_AUTO: tmp = eDVBFrontendParametersTerrestrial::FEC_Auto; break;
 				}
@@ -2339,10 +2336,7 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 				case eDVBFrontendParametersTerrestrial::FEC_3_4: p[cmdseq.num].u.data = FEC_3_4; break;
 				case eDVBFrontendParametersTerrestrial::FEC_4_5: p[cmdseq.num].u.data = FEC_4_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_5_6: p[cmdseq.num].u.data = FEC_5_6; break;
-				case eDVBFrontendParametersTerrestrial::FEC_6_7: p[cmdseq.num].u.data = FEC_6_7; break;
 				case eDVBFrontendParametersTerrestrial::FEC_7_8: p[cmdseq.num].u.data = FEC_7_8; break;
-				case eDVBFrontendParametersTerrestrial::FEC_8_9: p[cmdseq.num].u.data = FEC_8_9; break;
-				case eDVBFrontendParametersTerrestrial::FEC_9_10: p[cmdseq.num].u.data = FEC_9_10; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::FEC_Auto: p[cmdseq.num].u.data = FEC_AUTO; break;
 			}
@@ -2357,10 +2351,7 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 				case eDVBFrontendParametersTerrestrial::FEC_3_4: p[cmdseq.num].u.data = FEC_3_4; break;
 				case eDVBFrontendParametersTerrestrial::FEC_4_5: p[cmdseq.num].u.data = FEC_4_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_5_6: p[cmdseq.num].u.data = FEC_5_6; break;
-				case eDVBFrontendParametersTerrestrial::FEC_6_7: p[cmdseq.num].u.data = FEC_6_7; break;
 				case eDVBFrontendParametersTerrestrial::FEC_7_8: p[cmdseq.num].u.data = FEC_7_8; break;
-				case eDVBFrontendParametersTerrestrial::FEC_8_9: p[cmdseq.num].u.data = FEC_8_9; break;
-				case eDVBFrontendParametersTerrestrial::FEC_9_10: p[cmdseq.num].u.data = FEC_9_10; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::FEC_Auto: p[cmdseq.num].u.data = FEC_AUTO; break;
 			}

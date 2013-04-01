@@ -99,9 +99,7 @@ def ConvertToHumanReadable(tp, type = None):
 			eDVBFrontendParametersTerrestrial.FEC_4_5 : "4/5",
 			eDVBFrontendParametersTerrestrial.FEC_5_6 : "5/6",
 			eDVBFrontendParametersTerrestrial.FEC_6_7 : "6/7",
-			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8",
-			eDVBFrontendParametersTerrestrial.FEC_8_9 : "8/9",
-			eDVBFrontendParametersTerrestrial.FEC_9_10 : "9/10"}.get(tp.get("code_rate_hp"))
+			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8"}.get(tp.get("code_rate_hp"))
 		ret["code_rate_lp"] = {
 			eDVBFrontendParametersTerrestrial.FEC_Auto : _("Auto"),
 			eDVBFrontendParametersTerrestrial.FEC_1_2 : "1/2",
@@ -111,9 +109,7 @@ def ConvertToHumanReadable(tp, type = None):
 			eDVBFrontendParametersTerrestrial.FEC_4_5 : "4/5",
 			eDVBFrontendParametersTerrestrial.FEC_5_6 : "5/6",
 			eDVBFrontendParametersTerrestrial.FEC_6_7 : "6/7",
-			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8",
-			eDVBFrontendParametersTerrestrial.FEC_8_9 : "8/9",
-			eDVBFrontendParametersTerrestrial.FEC_9_10 : "9/10"}.get(tp.get("code_rate_lp"))
+			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8"}.get(tp.get("code_rate_lp"))
 		ret["constellation"] = {
 			eDVBFrontendParametersTerrestrial.Modulation_Auto : _("Auto"),
 			eDVBFrontendParametersTerrestrial.Modulation_QPSK : "QPSK",

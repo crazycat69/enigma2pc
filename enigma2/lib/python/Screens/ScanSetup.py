@@ -619,6 +619,7 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 				(eDVBFrontendParametersSatellite.FEC_7_8, "7/8"),
 				(eDVBFrontendParametersSatellite.FEC_None, _("None"))])
 			self.scan_sat.fec_s2 = ConfigSelection(default = defaultSat["fec_s2"], choices = [
+				(eDVBFrontendParametersSatellite.FEC_Auto, _("Auto")),
 				(eDVBFrontendParametersSatellite.FEC_1_2, "1/2"),
 				(eDVBFrontendParametersSatellite.FEC_2_3, "2/3"),
 				(eDVBFrontendParametersSatellite.FEC_3_4, "3/4"),
@@ -694,10 +695,7 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 				(eDVBFrontendParametersTerrestrial.FEC_3_4, "3/4"),
 				(eDVBFrontendParametersTerrestrial.FEC_4_5, "4/5"),
 				(eDVBFrontendParametersTerrestrial.FEC_5_6, "5/6"),
-				(eDVBFrontendParametersTerrestrial.FEC_6_7, "6/7"),
 				(eDVBFrontendParametersTerrestrial.FEC_7_8, "7/8"),
-				(eDVBFrontendParametersTerrestrial.FEC_8_9, "8/9"),
-				(eDVBFrontendParametersTerrestrial.FEC_9_10, "9/10"),
 				(eDVBFrontendParametersTerrestrial.FEC_Auto, _("Auto"))])
 			self.scan_ter.feclow = ConfigSelection(default = defaultTer["feclow"], choices = [
 				(eDVBFrontendParametersTerrestrial.FEC_1_2, "1/2"),
@@ -706,10 +704,7 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 				(eDVBFrontendParametersTerrestrial.FEC_3_4, "3/4"),
 				(eDVBFrontendParametersTerrestrial.FEC_4_5, "4/5"),
 				(eDVBFrontendParametersTerrestrial.FEC_5_6, "5/6"),
-				(eDVBFrontendParametersTerrestrial.FEC_6_7, "6/7"),
 				(eDVBFrontendParametersTerrestrial.FEC_7_8, "7/8"),
-				(eDVBFrontendParametersTerrestrial.FEC_8_9, "8/9"),
-				(eDVBFrontendParametersTerrestrial.FEC_9_10, "9/10"),
 				(eDVBFrontendParametersTerrestrial.FEC_Auto, _("Auto"))])
 			self.scan_ter.modulation = ConfigSelection(default = defaultTer["modulation"], choices = [
 				(eDVBFrontendParametersTerrestrial.Modulation_QPSK, "QPSK"),

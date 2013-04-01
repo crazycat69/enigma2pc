@@ -1315,9 +1315,9 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 					case eDVBFrontendParametersTerrestrial::Bandwidth_1_712MHz: bw = 1712000; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_10MHz: bw = 10000000; break;
 					}
-					if (crh > eDVBFrontendParametersTerrestrial::FEC_8_9)
+					if (crh > eDVBFrontendParametersTerrestrial::FEC_4_5)
 						crh = eDVBFrontendParametersTerrestrial::FEC_Auto;
-					if (crl > eDVBFrontendParametersTerrestrial::FEC_8_9)
+					if (crl > eDVBFrontendParametersTerrestrial::FEC_4_5)
 						crl = eDVBFrontendParametersTerrestrial::FEC_Auto;
 					tuple = PyTuple_New(12);
 					PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong(2));
