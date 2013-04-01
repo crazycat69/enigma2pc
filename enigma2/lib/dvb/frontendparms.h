@@ -29,7 +29,7 @@ struct eDVBFrontendParametersSatellite
 	};
 
 	enum {
-		Modulation_Auto, Modulation_QPSK, Modulation_8PSK, Modulation_QAM16
+		Modulation_Auto, Modulation_QPSK, Modulation_8PSK, Modulation_16APSK, Modulation_32APSK
 	};
 
 	// dvb-s2
@@ -43,7 +43,7 @@ struct eDVBFrontendParametersSatellite
 
 	bool no_rotor_command_on_tune;
 	unsigned int frequency, symbol_rate;
-	int polarisation, fec, inversion, orbital_position, system, modulation, rolloff, pilot;
+	int polarisation, fec, inversion, orbital_position, system, modulation, rolloff, pilot, is_id;
 };
 SWIG_ALLOW_OUTPUT_SIMPLE(eDVBFrontendParametersSatellite);
 
@@ -79,11 +79,11 @@ struct eDVBFrontendParametersTerrestrial
 	void set(const TerrestrialDeliverySystemDescriptor  &);
 #endif
 	enum {
-		Bandwidth_8MHz, Bandwidth_7MHz, Bandwidth_6MHz, Bandwidth_Auto, Bandwidth_5MHz, Bandwidth_1_712MHz, Bandwidth_10MHz
+		Bandwidth_8MHz, Bandwidth_7MHz, Bandwidth_6MHz, Bandwidth_10MHz, Bandwidth_5MHz, Bandwidth_1_712MHz, Bandwidth_Auto
 	};
 
 	enum {
-		FEC_1_2, FEC_2_3, FEC_3_4, FEC_5_6, FEC_6_7, FEC_7_8, FEC_8_9, FEC_Auto
+		FEC_1_2, FEC_2_3, FEC_3_4, FEC_5_6, FEC_6_7, FEC_7_8, FEC_8_9, FEC_3_5, FEC_4_5, FEC_9_10, FEC_Auto
 	};
 
 	enum {
@@ -91,11 +91,11 @@ struct eDVBFrontendParametersTerrestrial
 	};
 
 	enum {
-		TransmissionMode_2k, TransmissionMode_8k, TransmissionMode_Auto, TransmissionMode_4k
+		TransmissionMode_2k, TransmissionMode_8k, TransmissionMode_4k, TransmissionMode_1k, TransmissionMode_16k, TransmissionMode_32k, TransmissionMode_Auto
 	};
 
 	enum {
-		GuardInterval_1_32, GuardInterval_1_16, GuardInterval_1_8, GuardInterval_1_4, GuardInterval_Auto
+		GuardInterval_1_32, GuardInterval_1_16, GuardInterval_1_8, GuardInterval_1_4, GuardInterval_1_128, GuardInterval_19_128, GuardInterval_19_256, GuardInterval_Auto
 	};
 
 	enum {
@@ -103,7 +103,7 @@ struct eDVBFrontendParametersTerrestrial
 	};
 
 	enum {
-		Modulation_QPSK, Modulation_QAM16, Modulation_QAM64, Modulation_Auto, Modulation_QAM256
+		Modulation_QPSK, Modulation_QAM16, Modulation_QAM64, Modulation_QAM256, Modulation_Auto
 	};
 
 	enum {
@@ -119,7 +119,7 @@ struct eDVBFrontendParametersTerrestrial
 	int hierarchy;
 	int inversion;
 	int system;
-	int plpid;
+	int plp_id;
 };
 SWIG_ALLOW_OUTPUT_SIMPLE(eDVBFrontendParametersTerrestrial);
 

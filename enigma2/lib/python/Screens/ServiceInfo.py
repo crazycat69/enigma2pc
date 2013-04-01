@@ -202,7 +202,8 @@ class ServiceInfo(Screen):
 						(_("Inversion"), frontendData["inversion"], TYPE_TEXT),
 						(_("FEC"), frontendData["fec_inner"], TYPE_TEXT),
 						(_("Pilot"), frontendData.get("pilot", None), TYPE_TEXT),
-						(_("Roll-off"), frontendData.get("rolloff", None), TYPE_TEXT))
+						(_("Roll-off"), frontendData.get("rolloff", None), TYPE_TEXT),
+						(_("Input Stream ID"), frontendData.get("is_id", 0), TYPE_VALUE_DEC))
 			elif frontendDataOrg["tuner_type"] == "DVB-C":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
@@ -214,15 +215,16 @@ class ServiceInfo(Screen):
 			elif frontendDataOrg["tuner_type"] == "DVB-T":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
-						(_("Frequency"), frontendData["frequency"], TYPE_VALUE_DEC),
-						(_("Inversion"), frontendData["inversion"], TYPE_TEXT),
+						(_("System"), frontendData["system"], TYPE_TEXT),
+						(_("Modulation"), frontendData["constellation"], TYPE_TEXT),
+						(_("Frequency"), frontendData["frequency"]/1000, TYPE_VALUE_DEC),
 						(_("Bandwidth"), frontendData["bandwidth"], TYPE_VALUE_DEC),
-						(_("Code rate LP"), frontendData["code_rate_lp"], TYPE_TEXT),
-						(_("Code rate HP"), frontendData["code_rate_hp"], TYPE_TEXT),
-						(_("Constellation"), frontendData["constellation"], TYPE_TEXT),
+						(_("FEC HP"), frontendData["code_rate_hp"], TYPE_TEXT),
+						(_("FEC LP"), frontendData["code_rate_lp"], TYPE_TEXT),
 						(_("Transmission mode"), frontendData["transmission_mode"], TYPE_TEXT),
 						(_("Guard interval"), frontendData["guard_interval"], TYPE_TEXT),
-						(_("Hierarchy info"), frontendData["hierarchy_information"], TYPE_TEXT))
+						(_("Hierarchy info"), frontendData["hierarchy_information"], TYPE_TEXT),
+						(_("PLP ID"), frontendData.get("plp_id", 0), TYPE_VALUE_DEC))
 		return [ ]
 
 	def fillList(self, Labels):

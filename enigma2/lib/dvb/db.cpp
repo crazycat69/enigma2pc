@@ -392,11 +392,12 @@ void eDVBDB::loadServicelist(const char *file)
 					system=eDVBFrontendParametersSatellite::System_DVB_S,
 					modulation=eDVBFrontendParametersSatellite::Modulation_QPSK,
 					rolloff=eDVBFrontendParametersSatellite::RollOff_alpha_0_35,
-					pilot=eDVBFrontendParametersSatellite::Pilot_Unknown;
+					pilot=eDVBFrontendParametersSatellite::Pilot_Unknown,
+					is_id = -1, pls_code = 1, pls_mode = 0;
 				if (version == 3)
 					sscanf(line+3, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d", &frequency, &symbol_rate, &polarisation, &fec, &orbital_position, &inversion, &system, &modulation, &rolloff, &pilot);
 				else
-					sscanf(line+3, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d", &frequency, &symbol_rate, &polarisation, &fec, &orbital_position, &inversion, &flags, &system, &modulation, &rolloff, &pilot);
+					sscanf(line+3, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d", &frequency, &symbol_rate, &polarisation, &fec, &orbital_position, &inversion, &flags, &system, &modulation, &rolloff, &pilot, &is_id, &pls_code, &pls_mode);
 				sat.frequency = frequency;
 				sat.symbol_rate = symbol_rate;
 				sat.polarisation = polarisation;
@@ -408,14 +409,15 @@ void eDVBDB::loadServicelist(const char *file)
 				sat.modulation = modulation;
 				sat.rolloff = rolloff;
 				sat.pilot = pilot;
+				sat.is_id = is_id != -1 ? ((pls_mode<<26) | (pls_code<<8) | (is_id&0xff)) : -1;
 				feparm->setDVBS(sat);
 				feparm->setFlags(flags);
 			} else if (line[1]=='t')
 			{
 				eDVBFrontendParametersTerrestrial ter;
-				int frequency, bandwidth, code_rate_HP, code_rate_LP, modulation, transmission_mode, guard_interval, hierarchy, inversion, flags = 0, plpid = 0;
+				int frequency, bandwidth, code_rate_HP, code_rate_LP, modulation, transmission_mode, guard_interval, hierarchy, inversion, flags = 0, plp_id = -1;
 				int system = eDVBFrontendParametersTerrestrial::System_DVB_T;
-				sscanf(line+3, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d", &frequency, &bandwidth, &code_rate_HP, &code_rate_LP, &modulation, &transmission_mode, &guard_interval, &hierarchy, &inversion, &flags, &system, &plpid);
+				sscanf(line+3, "%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d", &frequency, &bandwidth, &code_rate_HP, &code_rate_LP, &modulation, &transmission_mode, &guard_interval, &hierarchy, &inversion, &flags, &system, &plp_id);
 				ter.frequency = frequency;
 				switch (bandwidth)
 				{
@@ -436,7 +438,7 @@ void eDVBDB::loadServicelist(const char *file)
 				ter.hierarchy = hierarchy;
 				ter.inversion = inversion;
 				ter.system = system;
-				ter.plpid = plpid;
+				ter.plp_id = plp_id;
 				feparm->setDVBT(ter);
 				feparm->setFlags(flags);
 			} else if (line[1]=='c')
@@ -546,7 +548,7 @@ void eDVBDB::saveServicelist(const char *file)
 		{
 			if (sat.system == eDVBFrontendParametersSatellite::System_DVB_S2)
 			{
-				fprintf(f, "\ts %d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
+				fprintf(f, "\ts %d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
 					sat.frequency, sat.symbol_rate,
 					sat.polarisation, sat.fec,
 					sat.orbital_position > 1800 ? sat.orbital_position - 3600 : sat.orbital_position,
@@ -555,7 +557,8 @@ void eDVBDB::saveServicelist(const char *file)
 					sat.system,
 					sat.modulation,
 					sat.rolloff,
-					sat.pilot);
+					sat.pilot,
+					sat.is_id&0xff, (sat.is_id>>8)&0x3FFFF, (sat.is_id>>26)&0x03);
 			}
 			else
 			{
@@ -580,10 +583,10 @@ void eDVBDB::saveServicelist(const char *file)
 			case 1712000: bandwidth = eDVBFrontendParametersTerrestrial::Bandwidth_1_712MHz; break;
 			case 10000000: bandwidth = eDVBFrontendParametersTerrestrial::Bandwidth_10MHz; break;
 			}
-			fprintf(f, "\tt %d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
+			fprintf(f, "\tt %d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n",
 				ter.frequency, bandwidth, ter.code_rate_HP,
 				ter.code_rate_LP, ter.modulation, ter.transmission_mode,
-				ter.guard_interval, ter.hierarchy, ter.inversion, flags, ter.system);
+				ter.guard_interval, ter.hierarchy, ter.inversion, flags, ter.system, ter.plp_id);
 		}
 		else if (!ch.m_frontendParameters->getDVBC(cab))
 		{
@@ -936,7 +939,7 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 		return Py_False;
 	}
 	int tmp, *dest = NULL,
-		modulation, system, freq, sr, pol, fec, inv, pilot, rolloff, tsid, onid;
+		modulation, system, freq, sr, pol, fec, inv, pilot, rolloff, is_id, pls_code, pls_mode, tsid, onid;
 	char *end_ptr;
 	const Attribute *at;
 	std::string name;
@@ -1001,6 +1004,9 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 				inv = eDVBFrontendParametersSatellite::Inversion_Unknown;
 				pilot = eDVBFrontendParametersSatellite::Pilot_Unknown;
 				rolloff = eDVBFrontendParametersSatellite::RollOff_alpha_0_35;
+				is_id = -1;
+				pls_code = 1;
+				pls_mode = 0;
 				tsid = -1;
 				onid = -1;
 
@@ -1018,6 +1024,9 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 					else if (name == "inversion") dest = &inv;
 					else if (name == "rolloff") dest = &rolloff;
 					else if (name == "pilot") dest = &pilot;
+					else if (name == "is_id") dest = &is_id;
+					else if (name == "pls_code") dest = &pls_code;
+					else if (name == "pls_mode") dest = &pls_mode;
 					else if (name == "tsid") dest = &tsid;
 					else if (name == "onid") dest = &onid;
 					else continue;
@@ -1031,7 +1040,7 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 				}
 				if (freq && sr && pol != -1)
 				{
-					tuple = PyTuple_New(12);
+					tuple = PyTuple_New(13);
 					PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong(0));
 					PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong(freq));
 					PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong(sr));
@@ -1042,8 +1051,10 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 					PyTuple_SET_ITEM(tuple, 7, PyInt_FromLong(inv));
 					PyTuple_SET_ITEM(tuple, 8, PyInt_FromLong(rolloff));
 					PyTuple_SET_ITEM(tuple, 9, PyInt_FromLong(pilot));
-					PyTuple_SET_ITEM(tuple, 10, PyInt_FromLong(tsid));
-					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(onid));
+					is_id = is_id != -1 ? ((pls_mode<<26) | (pls_code<<8) | (is_id&0xff)) : -1;
+					PyTuple_SET_ITEM(tuple, 10, PyInt_FromLong(is_id));
+					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(tsid));
+					PyTuple_SET_ITEM(tuple, 12, PyInt_FromLong(onid));
 					PyList_Append(tplist, tuple);
 					Py_DECREF(tuple);
 				}
@@ -1214,7 +1225,7 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 	const Attribute *at;
 	std::string name;
 	int tmp, *dest,
-		freq, bw, constellation, crh, crl, guard, transm, hierarchy, inv, system, plpid;
+		freq, bw, constellation, crh, crl, guard, transm, hierarchy, inv, system, plp_id;
 	char *end_ptr;
 	const ElementList &root_elements = root->getElementList();
 	for (ElementConstIterator it(root_elements.begin()); it != root_elements.end(); ++it)
@@ -1265,7 +1276,7 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 				hierarchy = eDVBFrontendParametersTerrestrial::Hierarchy_Auto;
 				inv = eDVBFrontendParametersTerrestrial::Inversion_Unknown;
 				system = eDVBFrontendParametersTerrestrial::System_DVB_T;
-				plpid = 0;
+				plp_id = -1;
 				for (AttributeConstIterator it(tp_attributes.begin()); it != end; ++it)
 				{
 //					eDebug("\t\tattr: %s", at->name().c_str());
@@ -1282,7 +1293,7 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 					else if (name == "hierarchy_information") dest = &hierarchy;
 					else if (name == "inversion") dest = &inv;
 					else if (name == "system") dest = &system;
-					else if (name == "plp_id") dest = &plpid;
+					else if (name == "plp_id") dest = &plp_id;
 					else continue;
 					if (dest)
 					{
@@ -1320,7 +1331,7 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 					PyTuple_SET_ITEM(tuple, 8, PyInt_FromLong(hierarchy));
 					PyTuple_SET_ITEM(tuple, 9, PyInt_FromLong(inv));
 					PyTuple_SET_ITEM(tuple, 10, PyInt_FromLong(system));
-					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(plpid));
+					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(plp_id));
 					PyList_Append(tplist, tuple);
 					Py_DECREF(tuple);
 				}

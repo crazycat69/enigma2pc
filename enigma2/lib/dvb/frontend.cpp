@@ -14,6 +14,14 @@
 
 #include <linux/dvb/frontend.h>
 
+#ifndef DTV_STREAM_ID
+	#define DTV_STREAM_ID DTV_ISDBS_TS_ID
+#endif
+
+#ifndef NO_STREAM_ID_FILTER
+	#define NO_STREAM_ID_FILTER	(~0U)
+#endif
+
 #include <dvbsi++/satellite_delivery_system_descriptor.h>
 #include <dvbsi++/cable_delivery_system_descriptor.h>
 #include <dvbsi++/terrestrial_delivery_system_descriptor.h>
@@ -102,21 +110,23 @@ void eDVBFrontendParametersSatellite::set(const SatelliteDeliverySystemDescripto
 		orbital_position = 3600 - orbital_position;
 	system = descriptor.getModulationSystem();
 	modulation = descriptor.getModulation();
-	if (system == System_DVB_S && modulation == Modulation_8PSK)
+	if (system == System_DVB_S && modulation != Modulation_QPSK)
 	{
 		eDebug("satellite_delivery_descriptor invalid modulation type.. force QPSK");
 		modulation = Modulation_QPSK;
 	}
 	rolloff = descriptor.getRollOff();
+	is_id = NO_STREAM_ID_FILTER;
 	if (system == System_DVB_S2)
 	{
-		eDebug("SAT DVB-S2 freq %d, %s, pos %d, sr %d, fec %d, modulation %d, rolloff %d",
+		eDebug("SAT DVB-S2 freq %d, %s, pos %d, sr %d, fec %d, modulation %d, rolloff %d, is_id %d",
 			frequency,
 			polarisation ? "hor" : "vert",
 			orbital_position,
 			symbol_rate, fec,
 			modulation,
-			rolloff);
+			rolloff,
+			is_id);
 	}
 	else
 	{
@@ -181,7 +191,7 @@ void eDVBFrontendParametersTerrestrial::set(const TerrestrialDeliverySystemDescr
 		default: transmission_mode = TransmissionMode_Auto; break;
 	}
 	guard_interval = descriptor.getGuardInterval();
-	if (guard_interval > GuardInterval_1_4)
+	if (guard_interval > GuardInterval_Auto)
 		guard_interval = GuardInterval_Auto;
 	hierarchy = descriptor.getHierarchyInformation();
 	if (hierarchy > Hierarchy_Auto)
@@ -191,10 +201,10 @@ void eDVBFrontendParametersTerrestrial::set(const TerrestrialDeliverySystemDescr
 		modulation = Modulation_Auto;
 	inversion = Inversion_Unknown;
 	system = System_DVB_T;
-	plpid = 0;
-	eDebug("Terr freq %d, bw %d, cr_hp %d, cr_lp %d, tm_mode %d, guard %d, hierarchy %d, const %d",
+	plp_id = NO_STREAM_ID_FILTER;
+	eDebug("Terr freq %d, bw %d, cr_hp %d, cr_lp %d, tm_mode %d, guard %d, hierarchy %d, const %d, system %d, plp_id %d",
 		frequency, bandwidth, code_rate_HP, code_rate_LP, transmission_mode,
-		guard_interval, hierarchy, modulation);
+		guard_interval, hierarchy, modulation, system, plp_id);
 }
 
 eDVBFrontendParameters::eDVBFrontendParameters()
@@ -295,6 +305,8 @@ RESULT eDVBFrontendParameters::calculateDifference(const iDVBFrontendParameters 
 				diff = 1<<29;
 			else if (sat.polarisation != osat.polarisation)
 				diff = 1<<28;
+			else if (sat.is_id != osat.is_id)
+				diff = 1<<27;
 			else if (exact && sat.fec != osat.fec && sat.fec != eDVBFrontendParametersSatellite::FEC_Auto && osat.fec != eDVBFrontendParametersSatellite::FEC_Auto)
 				diff = 1<<27;
 			else if (exact && sat.modulation != osat.modulation && sat.modulation != eDVBFrontendParametersSatellite::Modulation_Auto && osat.modulation != eDVBFrontendParametersSatellite::Modulation_Auto)
@@ -331,6 +343,8 @@ RESULT eDVBFrontendParameters::calculateDifference(const iDVBFrontendParameters 
 			if (parm->getDVBT(oterrestrial))
 				return -2;
 
+			if (oterrestrial.plp_id != terrestrial.plp_id)
+				diff = 1 << 27;
 			if (exact && oterrestrial.bandwidth != terrestrial.bandwidth &&
 				oterrestrial.bandwidth && terrestrial.bandwidth)
 				diff = 1 << 30;
@@ -552,9 +566,7 @@ int eDVBFrontend::openFrontend()
 				case FE_QPSK:
 				{
 					m_delsys[SYS_DVBS] = true;
-#ifdef FE_CAN_2G_MODULATION
 					if (fe_info.caps & FE_CAN_2G_MODULATION) m_delsys[SYS_DVBS2] = true;
-#endif
 					break;
 				}
 				case FE_QAM:
@@ -569,9 +581,7 @@ int eDVBFrontend::openFrontend()
 				case FE_OFDM:
 				{
 					m_delsys[SYS_DVBT] = true;
-#ifdef FE_CAN_2G_MODULATION
 					if (fe_info.caps & FE_CAN_2G_MODULATION) m_delsys[SYS_DVBT2] = true;
-#endif
 					break;
 				}
 				case FE_ATSC:	// placeholder to prevent warning
@@ -1121,7 +1131,7 @@ void PutTerrestrialDataToDict(ePyObject &dict, iDVBFrontendParameters *oparm)
 		PutToDict(dict, "hierarchy_information", feparm.hierarchy);
 		PutToDict(dict, "inversion", feparm.inversion);
 		PutToDict(dict, "system", feparm.system);
-		PutToDict(dict, "plp_id", feparm.plpid);
+		PutToDict(dict, "plp_id", feparm.plp_id);
 	}
 }
 
@@ -1222,6 +1232,8 @@ static void fillDictWithSatelliteData(ePyObject dict, struct dtv_property *p, un
 				default: eDebug("got unsupported modulation from frontend! report as QPSK!");
 				case QPSK: tmp = eDVBFrontendParametersSatellite::Modulation_QPSK; break;
 				case PSK_8: tmp = eDVBFrontendParametersSatellite::Modulation_8PSK; break;
+				case APSK_16: tmp = eDVBFrontendParametersSatellite::Modulation_16APSK; break;
+				case APSK_32: tmp = eDVBFrontendParametersSatellite::Modulation_32APSK; break;
 			}
 			PutToDict(dict, "modulation", tmp);
 			break;
@@ -1250,6 +1262,13 @@ static void fillDictWithSatelliteData(ePyObject dict, struct dtv_property *p, un
 					case PILOT_AUTO: tmp = eDVBFrontendParametersSatellite::Pilot_Unknown; break;
 				}
 				PutToDict(dict, "pilot", tmp);
+//				PutToDict(dict, "mis", p[4].u.data);
+			}
+			break;
+		case DTV_STREAM_ID:
+			if (system == eDVBFrontendParametersSatellite::System_DVB_S2)
+			{
+				 PutToDict(dict, "is_id", p[i].u.data);
 			}
 			break;
 		}
@@ -1325,6 +1344,8 @@ static void fillDictWithCableData(ePyObject dict, struct dtv_property *p, unsign
 static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, unsigned int propertycount)
 {
 	long tmp = 0;
+	long system = eDVBFrontendParametersTerrestrial::System_DVB_T;
+
 	for (unsigned int i = 0; i < propertycount; i++)
 	{
 		switch (p[i].cmd)
@@ -1342,10 +1363,14 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 				switch (p[i].u.data)
 				{
 					case FEC_1_2: tmp = eDVBFrontendParametersTerrestrial::FEC_1_2; break;
+					case FEC_3_5: tmp = eDVBFrontendParametersTerrestrial::FEC_3_5; break;
 					case FEC_2_3: tmp = eDVBFrontendParametersTerrestrial::FEC_2_3; break;
 					case FEC_3_4: tmp = eDVBFrontendParametersTerrestrial::FEC_3_4; break;
+					case FEC_4_5: tmp = eDVBFrontendParametersTerrestrial::FEC_4_5; break;
 					case FEC_5_6: tmp = eDVBFrontendParametersTerrestrial::FEC_5_6; break;
 					case FEC_7_8: tmp = eDVBFrontendParametersTerrestrial::FEC_7_8; break;
+					case FEC_8_9: tmp = eDVBFrontendParametersTerrestrial::FEC_8_9; break;
+					case FEC_9_10: tmp = eDVBFrontendParametersTerrestrial::FEC_9_10; break;
 					default:
 					case FEC_AUTO: tmp = eDVBFrontendParametersTerrestrial::FEC_Auto; break;
 				}
@@ -1355,10 +1380,14 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 				switch (p[i].u.data)
 				{
 					case FEC_1_2: tmp = eDVBFrontendParametersTerrestrial::FEC_1_2; break;
+					case FEC_3_5: tmp = eDVBFrontendParametersTerrestrial::FEC_3_5; break;
 					case FEC_2_3: tmp = eDVBFrontendParametersTerrestrial::FEC_2_3; break;
 					case FEC_3_4: tmp = eDVBFrontendParametersTerrestrial::FEC_3_4; break;
+					case FEC_4_5: tmp = eDVBFrontendParametersTerrestrial::FEC_4_5; break;
 					case FEC_5_6: tmp = eDVBFrontendParametersTerrestrial::FEC_5_6; break;
 					case FEC_7_8: tmp = eDVBFrontendParametersTerrestrial::FEC_7_8; break;
+					case FEC_8_9: tmp = eDVBFrontendParametersTerrestrial::FEC_8_9; break;
+					case FEC_9_10: tmp = eDVBFrontendParametersTerrestrial::FEC_9_10; break;
 					default:
 					case FEC_AUTO: tmp = eDVBFrontendParametersTerrestrial::FEC_Auto; break;
 				}
@@ -1379,8 +1408,12 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 			case DTV_TRANSMISSION_MODE:
 				switch (p[i].u.data)
 				{
+					case TRANSMISSION_MODE_1K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_1k; break;
 					case TRANSMISSION_MODE_2K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_2k; break;
+					case TRANSMISSION_MODE_4K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_4k; break;
 					case TRANSMISSION_MODE_8K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_8k; break;
+					case TRANSMISSION_MODE_16K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_16k; break;
+					case TRANSMISSION_MODE_32K: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_32k; break;
 					default:
 					case TRANSMISSION_MODE_AUTO: tmp = eDVBFrontendParametersTerrestrial::TransmissionMode_Auto; break;
 				}
@@ -1393,6 +1426,9 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 					case GUARD_INTERVAL_1_16: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_1_16; break;
 					case GUARD_INTERVAL_1_8: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_1_8; break;
 					case GUARD_INTERVAL_1_4: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_1_4; break;
+					case GUARD_INTERVAL_1_128: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_1_128; break;
+					case GUARD_INTERVAL_19_128: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_19_128; break;
+					case GUARD_INTERVAL_19_256: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_19_256; break;
 					default:
 					case GUARD_INTERVAL_AUTO: tmp = eDVBFrontendParametersTerrestrial::GuardInterval_Auto; break;
 				}
@@ -1426,7 +1462,14 @@ static void fillDictWithTerrestrialData(ePyObject dict, struct dtv_property *p, 
 					case SYS_DVBT: tmp = eDVBFrontendParametersTerrestrial::System_DVB_T; break;
 					case SYS_DVBT2: tmp = eDVBFrontendParametersTerrestrial::System_DVB_T2; break;
 				}
+				system = tmp;
 				PutToDict(dict, "system", tmp);
+				break;
+			case DTV_STREAM_ID:
+				if (system == eDVBFrontendParametersTerrestrial::System_DVB_T2)
+				{
+					 PutToDict(dict, "plp_id", p[i].u.data);
+				}
 				break;
 		}
 	}
@@ -1563,6 +1606,7 @@ void eDVBFrontend::getTransponderData(ePyObject dest, bool original)
 				p[cmdseq.num++].cmd = DTV_INNER_FEC;
 				p[cmdseq.num++].cmd = DTV_ROLLOFF;
 				p[cmdseq.num++].cmd = DTV_PILOT;
+				p[cmdseq.num++].cmd = DTV_STREAM_ID;
 			}
 			else if (type == feCable)
 			{
@@ -2120,7 +2164,7 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 		if (recvEvents)
 			m_sn->start();
 		feEvent(-1); // flush events
-		struct dtv_property p[16];
+		struct dtv_property p[17];
 		struct dtv_properties cmdseq;
 		cmdseq.props = p;
 		cmdseq.num = 0;
@@ -2154,7 +2198,8 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			{
 				case eDVBFrontendParametersSatellite::Modulation_QPSK: modulation = QPSK; break;
 				case eDVBFrontendParametersSatellite::Modulation_8PSK: modulation = PSK_8; break;
-				case eDVBFrontendParametersSatellite::Modulation_QAM16: modulation = QAM_16; break;
+				case eDVBFrontendParametersSatellite::Modulation_16APSK: modulation = APSK_16; break;
+				case eDVBFrontendParametersSatellite::Modulation_32APSK: modulation = APSK_32; break;
 			}
 			switch (parm.pilot)
 			{
@@ -2198,6 +2243,7 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			{
 				p[cmdseq.num].cmd = DTV_ROLLOFF, p[cmdseq.num].u.data = rolloff, cmdseq.num++;
 				p[cmdseq.num].cmd = DTV_PILOT, p[cmdseq.num].u.data = pilot, cmdseq.num++;
+				p[cmdseq.num].cmd = DTV_STREAM_ID, p[cmdseq.num].u.data = parm.is_id, cmdseq.num++;
 			}
 		}
 		else if (type == iDVBFrontend::feCable)
@@ -2288,12 +2334,15 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			switch (parm.code_rate_LP)
 			{
 				case eDVBFrontendParametersTerrestrial::FEC_1_2: p[cmdseq.num].u.data = FEC_1_2; break;
+				case eDVBFrontendParametersTerrestrial::FEC_3_5: p[cmdseq.num].u.data = FEC_3_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_2_3: p[cmdseq.num].u.data = FEC_2_3; break;
 				case eDVBFrontendParametersTerrestrial::FEC_3_4: p[cmdseq.num].u.data = FEC_3_4; break;
+				case eDVBFrontendParametersTerrestrial::FEC_4_5: p[cmdseq.num].u.data = FEC_4_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_5_6: p[cmdseq.num].u.data = FEC_5_6; break;
 				case eDVBFrontendParametersTerrestrial::FEC_6_7: p[cmdseq.num].u.data = FEC_6_7; break;
 				case eDVBFrontendParametersTerrestrial::FEC_7_8: p[cmdseq.num].u.data = FEC_7_8; break;
 				case eDVBFrontendParametersTerrestrial::FEC_8_9: p[cmdseq.num].u.data = FEC_8_9; break;
+				case eDVBFrontendParametersTerrestrial::FEC_9_10: p[cmdseq.num].u.data = FEC_9_10; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::FEC_Auto: p[cmdseq.num].u.data = FEC_AUTO; break;
 			}
@@ -2303,12 +2352,15 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			switch (parm.code_rate_HP)
 			{
 				case eDVBFrontendParametersTerrestrial::FEC_1_2: p[cmdseq.num].u.data = FEC_1_2; break;
+				case eDVBFrontendParametersTerrestrial::FEC_3_5: p[cmdseq.num].u.data = FEC_3_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_2_3: p[cmdseq.num].u.data = FEC_2_3; break;
 				case eDVBFrontendParametersTerrestrial::FEC_3_4: p[cmdseq.num].u.data = FEC_3_4; break;
+				case eDVBFrontendParametersTerrestrial::FEC_4_5: p[cmdseq.num].u.data = FEC_4_5; break;
 				case eDVBFrontendParametersTerrestrial::FEC_5_6: p[cmdseq.num].u.data = FEC_5_6; break;
 				case eDVBFrontendParametersTerrestrial::FEC_6_7: p[cmdseq.num].u.data = FEC_6_7; break;
 				case eDVBFrontendParametersTerrestrial::FEC_7_8: p[cmdseq.num].u.data = FEC_7_8; break;
 				case eDVBFrontendParametersTerrestrial::FEC_8_9: p[cmdseq.num].u.data = FEC_8_9; break;
+				case eDVBFrontendParametersTerrestrial::FEC_9_10: p[cmdseq.num].u.data = FEC_9_10; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::FEC_Auto: p[cmdseq.num].u.data = FEC_AUTO; break;
 			}
@@ -2329,9 +2381,13 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			p[cmdseq.num].cmd = DTV_TRANSMISSION_MODE;
 			switch (parm.transmission_mode)
 			{
+
+				case eDVBFrontendParametersTerrestrial::TransmissionMode_1k: p[cmdseq.num].u.data = TRANSMISSION_MODE_1K; break;
 				case eDVBFrontendParametersTerrestrial::TransmissionMode_2k: p[cmdseq.num].u.data = TRANSMISSION_MODE_2K; break;
 				case eDVBFrontendParametersTerrestrial::TransmissionMode_4k: p[cmdseq.num].u.data = TRANSMISSION_MODE_4K; break;
 				case eDVBFrontendParametersTerrestrial::TransmissionMode_8k: p[cmdseq.num].u.data = TRANSMISSION_MODE_8K; break;
+				case eDVBFrontendParametersTerrestrial::TransmissionMode_16k: p[cmdseq.num].u.data = TRANSMISSION_MODE_16K; break;
+				case eDVBFrontendParametersTerrestrial::TransmissionMode_32k: p[cmdseq.num].u.data = TRANSMISSION_MODE_32K; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::TransmissionMode_Auto: p[cmdseq.num].u.data = TRANSMISSION_MODE_AUTO; break;
 			}
@@ -2344,6 +2400,9 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 				case eDVBFrontendParametersTerrestrial::GuardInterval_1_16: p[cmdseq.num].u.data = GUARD_INTERVAL_1_16; break;
 				case eDVBFrontendParametersTerrestrial::GuardInterval_1_8: p[cmdseq.num].u.data = GUARD_INTERVAL_1_8; break;
 				case eDVBFrontendParametersTerrestrial::GuardInterval_1_4: p[cmdseq.num].u.data = GUARD_INTERVAL_1_4; break;
+				case eDVBFrontendParametersTerrestrial::GuardInterval_1_128: p[cmdseq.num].u.data = GUARD_INTERVAL_1_128; break;
+				case eDVBFrontendParametersTerrestrial::GuardInterval_19_128: p[cmdseq.num].u.data = GUARD_INTERVAL_19_128; break;
+				case eDVBFrontendParametersTerrestrial::GuardInterval_19_256: p[cmdseq.num].u.data = GUARD_INTERVAL_19_256; break;
 				default:
 				case eDVBFrontendParametersTerrestrial::GuardInterval_Auto: p[cmdseq.num].u.data = GUARD_INTERVAL_AUTO; break;
 			}
@@ -2364,9 +2423,7 @@ void eDVBFrontend::setFrontend(bool recvEvents)
 			p[cmdseq.num].cmd = DTV_BANDWIDTH_HZ, p[cmdseq.num].u.data = parm.bandwidth, cmdseq.num++;
 			if (system == SYS_DVBT2)
 			{
-#ifdef DTV_DVBT2_PLP_ID
-				p[cmdseq.num].cmd = DTV_DVBT2_PLP_ID, p[cmdseq.num].u.data = parm.plpid, cmdseq.num++;
-#endif
+				p[cmdseq.num].cmd = DTV_STREAM_ID, p[cmdseq.num].u.data = parm.plp_id, cmdseq.num++;
 			}
 		}
 		else if (type == iDVBFrontend::feATSC)
@@ -2430,7 +2487,7 @@ RESULT eDVBFrontend::prepare_sat(const eDVBFrontendParametersSatellite &feparm, 
 	res = m_sec->prepare(*this, feparm, satfrequency, 1 << m_slotid, tunetimeout);
 	if (!res)
 	{
-		eDebugNoSimulate("prepare_sat System %d Freq %d Pol %d SR %d INV %d FEC %d orbpos %d system %d modulation %d pilot %d, rolloff %d",
+		eDebugNoSimulate("prepare_sat System %d Freq %d Pol %d SR %d INV %d FEC %d orbpos %d system %d modulation %d pilot %d, rolloff %d, is_id %d",
 			feparm.system,
 			feparm.frequency,
 			feparm.polarisation,
@@ -2441,7 +2498,8 @@ RESULT eDVBFrontend::prepare_sat(const eDVBFrontendParametersSatellite &feparm, 
 			feparm.system,
 			feparm.modulation,
 			feparm.pilot,
-			feparm.rolloff);
+			feparm.rolloff,
+			feparm.is_id);
 		if ((unsigned int)satfrequency < fe_info.frequency_min || (unsigned int)satfrequency > fe_info.frequency_max)
 		{
 			eDebugNoSimulate("%d mhz out of tuner range.. dont tune", satfrequency / 1000);

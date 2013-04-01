@@ -153,7 +153,8 @@ class PositionerSetup(Screen):
 			cur.get("system", eDVBFrontendParametersSatellite.System_DVB_S),
 			cur.get("modulation", eDVBFrontendParametersSatellite.Modulation_QPSK),
 			cur.get("rolloff", eDVBFrontendParametersSatellite.RollOff_alpha_0_35),
-			cur.get("pilot", eDVBFrontendParametersSatellite.Pilot_Unknown))
+			cur.get("pilot", eDVBFrontendParametersSatellite.Pilot_Unknown),
+			cur.get("is_id", 0))
 
 		self.tuner.tune(tp)
 		self.polarisation = tp[2]
@@ -1199,6 +1200,7 @@ class TunerScreen(ConfigListScreen, Screen):
 				self.list.append(self.modulationEntry)
 				self.list.append(getConfigListEntry(_('Roll-off'), self.scan_sat.rolloff))
 				self.list.append(getConfigListEntry(_('Pilot'), self.scan_sat.pilot))
+				self.list.append(getConfigListEntry(_('Input Stream ID'), self.scan_sat.is_id))
 		else: # "predefined_transponder"
 			self.list.append(getConfigListEntry(_("Transponder"), self.tuning.transponder))
 			currtp = self.transponderToString([None, self.scan_sat.frequency.value, self.scan_sat.symbolrate.value, self.scan_sat.polarization.value])
@@ -1227,6 +1229,50 @@ class TunerScreen(ConfigListScreen, Screen):
 			pol = "CR"
 		else:
 			pol = "??"
+#		if tr[4] == 0:
+#			fec = "Auto"
+#		elif tr[4] == 1:
+#			fec = "1/2"
+#		elif tr[4] == 2:
+#			fec = "2/3"
+#		elif tr[4] == 3:
+#			fec = "3/4"
+#		elif tr[4] == 4:
+#			fec = "5/6"
+#		elif tr[4] == 5:
+#			fec = "7/8"
+#		elif tr[4] == 6:
+#			fec = "8/9"
+#		elif tr[4] == 7:
+#			fec = "3/5"
+#		elif tr[4] == 8:
+#			fec = "4/5"
+#		elif tr[4] == 9:
+#			fec = "9/10"
+#		else:
+#			fec = "??"
+#		if tr[5] == 1:
+#			std = "S2"
+#		else:
+#			std = "S";
+#		if tr[6] == 0:
+#			mod = "Auto"
+#		elif tr[6] == 1:
+#			mod = "QPSK"
+#		elif tr[6] == 2:
+#			mod = "8PSK"
+#		elif tr[6] == 3:
+#			mod = "16APSK"
+#		elif tr[6] == 4:
+#			mod = "32APSK"
+#		else:
+#			mod = "Auto"
+#				
+#		if tr[10] < 0 or tr[10] > 255:
+#			return str(tr[1] / scale) + "," + pol + "," + str(tr[2] / scale + "," + std + "," + mod + "," + fec)
+#		else:
+#			return str(tr[1] / scale) + "," + pol + "," + str(tr[2] / scale + "," + std + "," + mod + "," + fec + "," + tr[10])
+
 		return str(tr[1] / scale) + "," + pol + "," + str(tr[2] / scale)
 
 	def updateTransponders(self):
@@ -1235,6 +1281,48 @@ class TunerScreen(ConfigListScreen, Screen):
 			tps = []
 			for transponder in transponderlist:
 				tps.append(self.transponderToString(transponder, scale = 1000))
+		                if transponder[4] == 0:
+					fec = "Auto"
+				elif transponder[4] == 1:
+					fec = "1/2"
+				elif transponder[4] == 2:
+					fec = "2/3"
+				elif transponder[4] == 3:
+					fec = "3/4"
+				elif transponder[4] == 4:
+					fec = "5/6"
+				elif transponder[4] == 5:
+					fec = "7/8"
+				elif transponder[4] == 6:
+					fec = "8/9"
+				elif transponder[4] == 7:
+					fec = "3/5"
+				elif transponder[4] == 8:
+					fec = "4/5"
+				elif transponder[4] == 9:
+					fec = "9/10"
+				else:
+					fec = "??"
+				if transponder[5] == 1:
+					std = "S2"
+				else:
+					std = "S"
+				if transponder[6] == 0:
+					mod = "Auto"
+				elif transponder[6] == 1:
+					mod = "QPSK"
+				elif transponder[6] == 2:
+					mod = "8PSK"
+				elif transponder[6] == 3:
+					mod = "16APSK"
+				elif transponder[6] == 4:
+					mod = "32APSK"
+				else:
+					mod = "Auto"
+				if transponder[10] < 1 or transponder[10] > 255:
+					tps.append("," + std + "," + mod + "," + fec)
+				else:
+					tps.append("," + std + "," + mod + "," + fec + "," + str(transponder[10]))
 			self.tuning.transponder = ConfigSelection(choices = tps)
 
 	def keyLeft(self):
@@ -1261,11 +1349,12 @@ class TunerScreen(ConfigListScreen, Screen):
 				self.scan_sat.system.value,
 				self.scan_sat.modulation.value,
 				self.scan_sat.rolloff.value,
-				self.scan_sat.pilot.value)
+				self.scan_sat.pilot.value,
+				self.scan_sat.is_id.value)
 		elif self.tuning.type.value == "predefined_transponder":
 			transponder = nimmanager.getTransponders(satpos)[self.tuning.transponder.index]
 			returnvalue = (transponder[1] / 1000, transponder[2] / 1000,
-				transponder[3], transponder[4], 2, satpos, transponder[5], transponder[6], transponder[8], transponder[9])
+				transponder[3], transponder[4], 2, satpos, transponder[5], transponder[6], transponder[8], transponder[9], transponder[10])
 		self.close(returnvalue)
 
 	def keyCancel(self):
