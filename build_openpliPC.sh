@@ -251,8 +251,8 @@ sudo cp -rf etc/* $INSTALL_E2DIR/etc
 sudo cp enigma2/data/black.mvi $INSTALL_E2DIR/etc/tuxbox/logo.mvi
 sudo cp -fR scripts/* $INSTALL_E2DIR/bin/
 
-ln -sf $INSTALL_E2DIR/bin/enigma2 ./e2bin
-ln -sf $INSTALL_E2DIR/bin/enigma2.sh /usr/local/bin/enigma2.sh
+sudo ln -sf $INSTALL_E2DIR/bin/enigma2 ./e2bin
+sudo ln -sf $INSTALL_E2DIR/bin/enigma2.sh /usr/local/bin/enigma2.sh
 
 if [ "$DO_RESTORE" -eq "1" ]; then
 	e2_restore
