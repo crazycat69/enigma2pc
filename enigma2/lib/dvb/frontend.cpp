@@ -933,6 +933,11 @@ void eDVBFrontend::calculateSignalQuality(int snr, int &signalquality, int &sign
 		default: break;
 		}
 	}
+	else if (strstr(m_description, "STV090x"))
+	{
+		ret = (int)(snr / 32.768);
+		sat_max = 2000;
+	}
 
 	signalqualitydb = ret;
 	if (ret == 0x12345678) // no snr db calculation avail.. return untouched snr value..
