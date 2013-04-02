@@ -98,7 +98,6 @@ def ConvertToHumanReadable(tp, type = None):
 			eDVBFrontendParametersTerrestrial.FEC_3_4 : "3/4",
 			eDVBFrontendParametersTerrestrial.FEC_4_5 : "4/5",
 			eDVBFrontendParametersTerrestrial.FEC_5_6 : "5/6",
-			eDVBFrontendParametersTerrestrial.FEC_6_7 : "6/7",
 			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8"}.get(tp.get("code_rate_hp"))
 		ret["code_rate_lp"] = {
 			eDVBFrontendParametersTerrestrial.FEC_Auto : _("Auto"),
@@ -108,7 +107,6 @@ def ConvertToHumanReadable(tp, type = None):
 			eDVBFrontendParametersTerrestrial.FEC_3_4 : "3/4",
 			eDVBFrontendParametersTerrestrial.FEC_4_5 : "4/5",
 			eDVBFrontendParametersTerrestrial.FEC_5_6 : "5/6",
-			eDVBFrontendParametersTerrestrial.FEC_6_7 : "6/7",
 			eDVBFrontendParametersTerrestrial.FEC_7_8 : "7/8"}.get(tp.get("code_rate_lp"))
 		ret["constellation"] = {
 			eDVBFrontendParametersTerrestrial.Modulation_Auto : _("Auto"),
