@@ -76,7 +76,7 @@ eDVBResourceManager::eDVBResourceManager()
 	if (!instance)
 		instance = this;
 
-	int num_adapter = 1;
+	int num_adapter = 0;
 	while (eDVBAdapterLinux::exist(num_adapter))
 	{
 		if (eDVBAdapterLinux::isusb(num_adapter))
