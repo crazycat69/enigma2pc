@@ -481,7 +481,7 @@ int eDVBFrontend::PriorityOrder=0;
 int eDVBFrontend::PreferredFrontendIndex = -1;
 
 eDVBFrontend::eDVBFrontend(const char *devicenodename, int fe, int &ok, bool simulate, eDVBFrontend *simulate_fe)
-	:m_simulate(simulate), m_enabled(false), m_simulate_fe(simulate_fe), m_dvbid(fe), m_slotid(fe)
+	:m_simulate(simulate), m_enabled(false), m_simulate_fe(simulate_fe), m_dvbid(fe), m_slotid(-1)
 	,m_fd(-1), m_rotor_mode(false), m_need_rotor_workaround(false)
 	,m_state(stateClosed), m_timeout(0), m_tuneTimer(0)
 {
@@ -2947,15 +2947,15 @@ bool eDVBFrontend::setSlotInfo(ePyObject obj)
 	Enabled = PyTuple_GET_ITEM(obj, 2);
 	IsDVBS2 = PyTuple_GET_ITEM(obj, 3);
 	frontendId = PyTuple_GET_ITEM(obj, 4);
-	m_slotid = PyInt_AsLong(Id);
 	if (!PyInt_Check(Id) || !PyString_Check(Descr) || !PyBool_Check(Enabled) || !PyBool_Check(IsDVBS2) || !PyInt_Check(frontendId))
 		goto arg_error;
-	strcpy(m_description, PyString_AS_STRING(Descr));
 	if (PyInt_AsLong(frontendId) == -1 || PyInt_AsLong(frontendId) != m_dvbid) {
 //		eDebugNoSimulate("skip slotinfo for slotid %d, descr %s",
 //			m_slotid, m_description);
 		return false;
 	}
+	strcpy(m_description, PyString_AS_STRING(Descr));
+	m_slotid = PyInt_AsLong(Id);
 	m_enabled = Enabled == Py_True;
 	// HACK.. the rotor workaround is neede for all NIMs with LNBP21 voltage regulator...
 	m_need_rotor_workaround = !!strstr(m_description, "Alps BSBE1") ||

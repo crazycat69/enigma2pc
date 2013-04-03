@@ -94,13 +94,6 @@ eDVBResourceManager::eDVBResourceManager()
 		num_adapter++;
 	}
 
-	if (eDVBAdapterLinux::exist(0))
-	{
-			eDVBAdapterLinux *adapter = new eDVBAdapterLinux(0);
-			adapter->scanDevices();
-			addAdapter(adapter, true);
-	}
-
 	int fd = open(eEnv::resolve("${sysconfdir}/stb/info/model").c_str(), O_RDONLY);
 	char tmp[16];
 	int rd = fd >= 0 ? read(fd, tmp, sizeof(tmp)) : 0;
