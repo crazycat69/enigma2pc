@@ -7,13 +7,15 @@
 	and combinations of this.
 -->
 <!-- transponder parameters:
-	bandwidth: 0 = 8 MHz, 1 = 7 MHz, 2 = 6 MHz, 3 = Auto (unsupported, default)
-	constellation: 0 = QPSK, 1 = 16-QAM (default), 2 = 64-QAM, 3 = Auto
-	code_rate_{lp,hp}: 0 = 1/2, 1 = 2/3, 2 = 3/4, 3 = 5/6, 4 = 7/8, 5 = Auto (default), 6 = None
-	guard_interval: 0 = 1/32, 1 = 1/16, 2 = 1/8, 3 = 1/4, 4 = Auto (default)
-	transmission_mode: 0 = 2K, 1 = 8K, 2 = Auto (default)
+	bandwidth: 0 = 8 MHz, 1 = 7 MHz, 2 = 6 MHz, 3 = Auto (unsupported, default), 4 = 10 MHz, 5 = 5MHz, 6 = 1.712MHz
+	constellation: 0 = QPSK, 1 = 16-QAM (default), 2 = 64-QAM, 3 = Auto, 4 = 256-QAM
+	code_rate_{lp,hp}: 0 = 1/2, 1 = 2/3, 2 = 3/4, 3 = 5/6, 4 = 7/8, 5 = Auto (default), 6 = None, 7 = 3/5, 8 = 4/5
+	guard_interval: 0 = 1/32, 1 = 1/16, 2 = 1/8, 3 = 1/4, 4 = Auto (default), 5 = 1/128, 6 = 19/128, 7 = 19/256
+	transmission_mode: 0 = 2K, 1 = 8K, 2 = Auto (default), 3 = 1K, 4 = 4K, 5 = 16K, 6 = 32K
 	hierarchy_information: 0 = None, 1 = 1, 2 = 2, 3 = 4, 4 = Auto (default)
 	inversion: 0 = Off, 1 = On, 2 = Auto (default)
+	system: 0 = DVB-T, 1 = DVB-T2
+	plp_id: 0 - 255
 -->
 <!--
 	Please report missing frequencies and pointers to regional
@@ -324,5 +326,23 @@
 		<transponder centre_frequency="842000000" bandwidth="0" constellation="3"/>
 		<transponder centre_frequency="850000000" bandwidth="0" constellation="3"/>
 		<transponder centre_frequency="858000000" bandwidth="0" constellation="3"/>
+	</terrestrial>
+	<terrestrial name="Ukraine, Kharkov: DVB-T2" flags="5">
+		<transponder centre_frequency="554000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="586000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="690000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="770000000" bandwidth="0" constellation="4" system="1"/>
+	</terrestrial>
+	<terrestrial name="Ukraine, Lozovaya: DVB-T2" flags="5">
+		<transponder centre_frequency="554000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="746000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="754000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="778000000" bandwidth="0" constellation="4" system="1"/>
+	</terrestrial>
+	<terrestrial name="Russia, Novosibirsk: DVB-T2" flags="5">
+		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
+		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="1"/>
+		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="2"/>
+		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="3"/>
 	</terrestrial>
 </locations>
