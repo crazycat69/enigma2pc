@@ -303,7 +303,6 @@ int eDVBTSTools::fixupPTS(const off_t &offset, pts_t &now)
 
 int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 {
-	eDebug("getOffset for pts %llu", pts);
 	if (m_streaminfo.hasAccessPoints())
 	{
 		if ((pts >= m_pts_end) && (marg > 0) && m_end_valid)
@@ -427,7 +426,13 @@ void eDVBTSTools::calcBegin()
 		// Just ask streaminfo
 		if (m_streaminfo.getFirstFrame(m_offset_begin, m_pts_begin) == 0)
 		{
-			eDebug("[@ML] m_streaminfo.getFirstFrame returned %llu, %llu", m_offset_begin, m_pts_begin);
+			off_t begin = m_offset_begin;
+			pts_t pts = m_pts_begin;
+			if (m_streaminfo.fixupPTS(begin, pts) == 0)
+			{
+				eDebug("[@ML] m_streaminfo.getLastFrame returned %llu, %llu (%us), fixup to: %llu, %llu (%us)",
+				       m_offset_begin, m_pts_begin, (unsigned int)(m_pts_begin/90000), begin, pts, (unsigned int)(pts/90000));
+			}
 			m_begin_valid = 1;
 		}
 		else
@@ -439,6 +444,14 @@ void eDVBTSTools::calcBegin()
 				m_futile = 1;
 		}
 	}
+}
+
+static pts_t pts_diff(pts_t low, pts_t high)
+{
+	high -= low;
+	if (high < 0)
+		high += 0x200000000LL;
+	return high;
 }
 
 void eDVBTSTools::calcEnd()
@@ -466,7 +479,13 @@ void eDVBTSTools::calcEnd()
 	{
 		if (m_streaminfo.getLastFrame(m_offset_end, m_pts_end) == 0)
 		{
-			//eDebug("[@ML] m_streaminfo.getLastFrame returned %llu, %llu", m_offset_end, m_pts_end);
+			m_pts_length = m_pts_end;
+			end = m_offset_end;
+			if (m_streaminfo.fixupPTS(end, m_pts_length) != 0)
+			{
+				/* Not enough structure info, estimate */
+				m_pts_length = pts_diff(m_pts_begin, m_pts_end);
+			}
 			m_end_valid = 1;
 		}
 		else
@@ -488,7 +507,10 @@ void eDVBTSTools::calcEnd()
 				off_t off = m_offset_end;
 
 				if (!getPTS(m_offset_end, m_pts_end))
+				{
+					m_pts_length = pts_diff(m_pts_begin, m_pts_end);
 					m_end_valid = 1;
+				}
 				else
 					m_offset_end = off;
 
@@ -513,24 +535,15 @@ int eDVBTSTools::calcLen(pts_t &len)
 	calcBeginAndEnd();
 	if (!(m_begin_valid && m_end_valid))
 		return -1;
-	len = m_pts_end - m_pts_begin;
-		/* wrap around? */
-	if (len < 0)
-		len += 0x200000000LL;
+	len = m_pts_length;
 	return 0;
 }
 
 int eDVBTSTools::calcBitrate()
 {
-	calcBeginAndEnd();
-	if (!(m_begin_valid && m_end_valid))
+	pts_t len_in_pts;
+	if (calcLen(len_in_pts) != 0)
 		return -1;
-
-	pts_t len_in_pts = m_pts_end - m_pts_begin;
-
-		/* wrap around? */
-	if (len_in_pts < 0)
-		len_in_pts += 0x200000000LL;
 	off_t len_in_bytes = m_offset_end - m_offset_begin;
 	
 	if (!len_in_pts)
@@ -544,15 +557,15 @@ int eDVBTSTools::calcBitrate()
 }
 
 	/* pts, off */
-void eDVBTSTools::takeSamples()
+int eDVBTSTools::takeSamples()
 {
 	m_samples_taken = 1;
 	m_samples.clear();
-	pts_t dummy;
 	int retries=2;
 
-	if (calcLen(dummy) == -1)
-		return;
+	calcBeginAndEnd();
+	if (!(m_begin_valid && m_end_valid))
+		return -1;
 	
 	int nr_samples = 30;
 	off_t bytes_per_sample = (m_offset_end - m_offset_begin) / (long long)nr_samples;
@@ -574,6 +587,7 @@ void eDVBTSTools::takeSamples()
 	}
 	m_samples[0] = m_offset_begin;
 	m_samples[m_pts_end - m_pts_begin] = m_offset_end;
+	return 0;
 }
 
 	/* returns 0 when a sample was taken. */
@@ -612,7 +626,7 @@ int eDVBTSTools::takeSample(off_t off, pts_t &p)
 	return -1;
 }
 
-int eDVBTSTools::findPMT(int &pmt_pid, int &service_id)
+int eDVBTSTools::findPMT(int *pmt_pid, int *service_id, int* pcr_pid)
 {
 		/* FIXME: this will be factored out soon! */
 	if (!m_source || !m_source->valid())
@@ -646,11 +660,8 @@ int eDVBTSTools::findPMT(int &pmt_pid, int &service_id)
 			}
 			continue;
 		}
-		int pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
 		
-		int pusi = !!(packet[1] & 0x40);
-		
-		if (!pusi)
+		if (!(packet[1] & 0x40)) /* pusi */
 			continue;
 		
 			/* ok, now we have a PES header or section header*/
@@ -670,8 +681,12 @@ int eDVBTSTools::findPMT(int &pmt_pid, int &service_id)
 
 		if (sec[1] == 0x02) /* program map section */
 		{
-			pmt_pid = pid;
-			service_id = (sec[4] << 8) | sec[5];
+			if (pmt_pid)
+				*pmt_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+			if (service_id)
+				*service_id = (sec[4] << 8) | sec[5];
+			if (pcr_pid)
+				*pcr_pid = ((sec[9] << 8) | sec[10]) & 0x1FFF; /* 13-bits */
 			return 0;
 		}
 	}

@@ -9,6 +9,14 @@ from Tools.Directories import resolveFilename, SCOPE_CURRENT_SKIN
 
 from Components.config import config
 
+def refreshServiceList(configElement = None):
+	from Screens.InfoBar import InfoBar
+	InfoBarInstance = InfoBar.instance
+	if InfoBarInstance is not None:
+		servicelist = InfoBarInstance.servicelist
+		if servicelist:
+			servicelist.setMode()
+
 class ServiceList(HTMLComponent, GUIComponent):
 	MODE_NORMAL = 0
 	MODE_FAVOURITES = 1
@@ -268,5 +276,6 @@ class ServiceList(HTMLComponent, GUIComponent):
 		self.l.setElementFont(self.l.celServiceInfo, self.ServiceInfoFont)
 		if "perc" in config.usage.show_event_progress_in_servicelist.value:
 			self.l.setElementFont(self.l.celServiceEventProgressbar, self.ServiceInfoFont)
+		self.l.setHideNumberMarker(config.usage.hide_number_markers.value)
 
 

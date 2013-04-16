@@ -52,7 +52,9 @@ public:
 	int findFrame(off_t &offset, size_t &len, int &direction, int frame_types = frametypeI);
 	int findNextPicture(off_t &offset, size_t &len, int &distance, int frame_types = frametypeAll);
 
-	int findPMT(int &pmt_pid, int &service_id);
+	/* Retrieve pmt, service number and PCR PID. Returns 0 on success.
+	 * Arguments may be NULL for items you don't need. */
+	int findPMT(int *pmt_pid, int *service_id, int* pcr_pid);
 
 protected:
 	void closeSource();
@@ -65,7 +67,7 @@ protected:
 	void calcEnd();
 	void calcBeginAndEnd();
 
-	void takeSamples();
+	int takeSamples();
 	int takeSample(off_t off, pts_t &p);
 
 private:
@@ -76,6 +78,7 @@ private:
 	int m_begin_valid, m_end_valid;
 	pts_t m_pts_begin, m_pts_end;
 	off_t m_offset_begin, m_offset_end;
+	pts_t m_pts_length;
 	
 		/* for simple linear interpolation */
 	std::map<pts_t, off_t> m_samples;

@@ -18,6 +18,9 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
+#define MIN(a,b) (a < b ? a : b)
+#define MAX(a,b) (a > b ? a : b)
+
 DEFINE_REF(eDVBRegisteredFrontend);
 DEFINE_REF(eDVBRegisteredDemux);
 
@@ -263,6 +266,7 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 	struct dvb_frontend_info fe_info;
 	int frontend = -1;
 	char filename[256];
+	char name[128] = {0};
 	int vtunerid = nr - 1;
 
 	pumpThread = 0;
@@ -278,6 +282,7 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 
 	demuxFd = vtunerFd = pipeFd[0] = pipeFd[1] = -1;
 
+	/* find the device name */
 	snprintf(filename, sizeof(filename), "/sys/class/dvb/dvb%d.frontend0/device/product", nr);
 	file = ::open(filename, O_RDONLY);
 	if (file < 0)
@@ -288,18 +293,13 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 
 	if (file >= 0)
 	{
-		char *tmp = name;
-		int len = read(file, tmp, sizeof(name) - 1);
-		if (len > 0)
+		int len = read(file, name, sizeof(name) - 1);
+		if (len >= 0)
 		{
-			tmp[len] = 0;
-			while (len && (strchr(" \n\r", tmp[len-1]) != NULL))
-			{
-				--len;
-				tmp[len] = 0;
-			}
+			name[len] = 0;
 		}
 		::close(file);
+		file = -1;
 	}
 
 	snprintf(filename, sizeof(filename), "/dev/dvb/adapter%d/frontend0", nr);
@@ -318,6 +318,29 @@ eDVBUsbAdapter::eDVBUsbAdapter(int nr)
 	frontend = -1;
 
 	usbFrontendName = filename;
+
+	if (!name[0])
+	{
+		/* fallback to the dvb_frontend_info name */
+		int len = MIN(sizeof(fe_info.name), sizeof(name) - 1);
+		strncpy(name, fe_info.name, len);
+		name[len] = 0;
+	}
+	if (name[0])
+	{
+		/* strip trailing LF / CR / whitespace */
+		int len = strlen(name);
+		char *tmp = name;
+		while (len && (strchr(" \n\r\t", tmp[len - 1]) != NULL))
+		{
+			tmp[--len] = 0;
+		}
+	}
+	if (!name[0])
+	{
+		/* we did not find a usable name, fallback to a default */
+		snprintf(name, sizeof(name), "usb frontend");
+	}
 
 	snprintf(filename, sizeof(filename), "/dev/dvb/adapter%d/demux0", nr);
 	demuxFd = open(filename, O_RDONLY | O_NONBLOCK);
@@ -1236,17 +1259,17 @@ int eDVBResourceManager::canAllocateFrontend(ePtr<iDVBFrontendParameters> &fepar
 	return bestval;
 }
 
-int tuner_type_channel_default(ePtr<iDVBChannelList> &channellist, const eDVBChannelID &chid)
+int tuner_type_channel_default(ePtr<iDVBChannelList> &channellist, const eDVBChannelID &chid, int &system)
 {
+	system = iDVBFrontend::feSatellite;
 	if (channellist)
 	{
 		ePtr<iDVBFrontendParameters> feparm;
 		if (!channellist->getChannelFrontendData(chid, feparm))
 		{
-			int system;
 			if (!feparm->getSystem(system))
 			{
-				switch(system)
+				switch (system)
 				{
 					case iDVBFrontend::feSatellite:
 						return 50000;
@@ -1263,15 +1286,16 @@ int tuner_type_channel_default(ePtr<iDVBChannelList> &channellist, const eDVBCha
 	return 0;
 }
 
-int eDVBResourceManager::canAllocateChannel(const eDVBChannelID &channelid, const eDVBChannelID& ignore, bool simulate)
+int eDVBResourceManager::canAllocateChannel(const eDVBChannelID &channelid, const eDVBChannelID& ignore, int &system, bool simulate)
 {
 	std::list<active_channel> &active_channels = simulate ? m_active_simulate_channels : m_active_channels;
-	int ret=0;
+	int ret = 0;
+	system = iDVBFrontend::feSatellite;
 	if (!simulate && m_cached_channel)
 	{
 		eDVBChannel *cache_chan = (eDVBChannel*)&(*m_cached_channel);
 		if(channelid==cache_chan->getChannelID())
-			return tuner_type_channel_default(m_list, channelid);
+			return tuner_type_channel_default(m_list, channelid, system);
 	}
 
 		/* first, check if a channel is already existing. */
@@ -1282,7 +1306,7 @@ int eDVBResourceManager::canAllocateChannel(const eDVBChannelID &channelid, cons
 		if (i->m_channel_id == channelid)
 		{
 //			eDebug("found shared channel..");
-			return tuner_type_channel_default(m_list, channelid);
+			return tuner_type_channel_default(m_list, channelid, system);
 		}
 	}
 
@@ -1362,6 +1386,7 @@ int eDVBResourceManager::canAllocateChannel(const eDVBChannelID &channelid, cons
 		eDebug("channel not found!");
 		goto error;
 	}
+	feparm->getSystem(system);
 
 	ret = canAllocateFrontend(feparm, simulate);
 
@@ -1403,7 +1428,7 @@ class eDVBChannelFilePush: public eFilePushThread
 {
 public:
 	eDVBChannelFilePush(int packetsize = 188):
-		eFilePushThread(IOPRIO_CLASS_BE, 0, packetsize, 65536), // 64k buffer for playback
+		eFilePushThread(IOPRIO_CLASS_BE, 0, packetsize, packetsize * 512),
 		m_iframe_search(0),
 		m_iframe_state(0),
 		m_pid(0),
@@ -1620,7 +1645,7 @@ void eDVBChannel::cueSheetEvent(int event)
 				eDebug("span translation failed.\n");
 				continue;
 			}
-			eDebug("source span: %llx .. %llx, translated to %llx..%llx", pts_in, pts_out, offset_in, offset_out);
+			eDebug("source span: %llu .. %llu, translated to %llu..%llu", pts_in, pts_out, offset_in, offset_out);
 			m_source_span.push_back(std::pair<off_t, off_t>(offset_in, offset_out));
 		}
 		break;
@@ -1641,12 +1666,19 @@ static inline long long align(long long x, int align)
 	}
 }
 
+static size_t diff_upto(off_t high, off_t low, size_t max)
+{
+	off_t diff = high - low;
+	if (diff < max)
+		return (size_t)diff;
+	return max;
+}
 
 	/* remember, this gets called from another thread. */
 void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off_t &start, size_t &size)
 {
 	const int blocksize = 188;
-	unsigned int max = align(10*1024*1024, blocksize);
+	unsigned int max = align(1024*1024*1024, blocksize);
 	current_offset = align(current_offset, blocksize);
 
 	if (!m_cue)
@@ -1668,7 +1700,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 	if (m_skipmode_m)
 	{
 		int frames_to_skip = m_skipmode_frames + m_skipmode_frames_remainder;
-		//eDebug("we are at %llx, and we try to skip %d+%d frames from here", current_offset, m_skipmode_frames, m_skipmode_frames_remainder);
+		//eDebug("we are at %llu, and we try to skip %d+%d frames from here", current_offset, m_skipmode_frames, m_skipmode_frames_remainder);
 		size_t iframe_len;
 		off_t iframe_start = current_offset;
 		int frames_skipped = frames_to_skip;
@@ -1695,7 +1727,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 
 		if (m_skipmode_m)
 		{
-			eDebug("we are at %llx, and we try to find the iframe here:", current_offset);
+			eDebug("we are at %llu, and we try to find the iframe here:", current_offset);
 			size_t iframe_len;
 			off_t iframe_start = current_offset;
 
@@ -1740,7 +1772,7 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 			}
 			if (!m_cue->m_decoding_demux)
 			{
-				eDebug("getNextSourceSpan, no decoding demux. couldn't seek to %llx... ignore request!", pts);
+				eDebug("getNextSourceSpan, no decoding demux. couldn't seek to %llu... ignore request!", pts);
 				start = current_offset;
 				size = max;
 				continue;
@@ -1809,62 +1841,43 @@ void eDVBChannel::getNextSourceSpan(off_t current_offset, size_t bytes_read, off
 
 	for (std::list<std::pair<off_t, off_t> >::const_iterator i(m_source_span.begin()); i != m_source_span.end(); ++i)
 	{
-		long long aligned_start = align(i->first, blocksize);
-		long long aligned_end = align(i->second, blocksize);
-
-		if ((current_offset >= aligned_start) && (current_offset < aligned_end))
+		if (current_offset >= i->first)
 		{
-			start = current_offset;
-				/* max can not exceed max(size_t). aligned_end - current_offset, however, can. */
-			if ((aligned_end - current_offset) > max)
-				size = max;
-			else
-				size = aligned_end - current_offset;
-			eDebug("HIT, %lld < %lld < %lld, size: %zd", i->first, current_offset, i->second, size);
-			return;
+			if (current_offset < i->second)
+			{
+				start = current_offset;
+				size = diff_upto(i->second, start, max);
+				//eDebug("HIT, %lld < %lld < %lld, size: %zd", i->first, current_offset, i->second, size);
+				return;
+			}
 		}
-		if (current_offset < aligned_start)
+		else /* (current_offset < i->first) */
 		{
 				/* ok, our current offset is in an 'out' zone. */
 			if ((m_skipmode_m >= 0) || (i == m_source_span.begin()))
 			{
 					/* in normal playback, just start at the next zone. */
 				start = i->first;
-
-					/* size is not 64bit! */
-				if ((i->second - i->first) > max)
-					size = max;
-				else
-					size = aligned_end - aligned_start;
-
+				size = diff_upto(i->second, start, max);
 				eDebug("skip");
 				if (m_skipmode_m < 0)
 				{
 					eDebug("reached SOF");
-						/* reached SOF */
 					m_skipmode_m = 0;
 					m_pvr_thread->sendEvent(eFilePushThread::evtUser);
 				}
 			} else
 			{
 					/* when skipping reverse, however, choose the zone before. */
+					/* This returns a size 0 block, in case you noticed... */
 				--i;
-				eDebug("skip to previous block, which is %llx..%llx", i->first, i->second);
-				size_t len;
-
-				aligned_start = align(i->first, blocksize);
-				aligned_end = align(i->second, blocksize);
-
-				if ((aligned_end - aligned_start) > max)
-					len = max;
-				else
-					len = aligned_end - aligned_start;
-
-				start = aligned_end - len;
-				eDebug("skipping to %llx, %zd", start, len);
+				eDebug("skip to previous block, which is %llu..%llu", i->first, i->second);
+				size_t len = diff_upto(i->second, i->first, max);
+				start = i->second - len;
+				eDebug("skipping to %llu, %zd", start, len);
 			}
 
-			eDebug("result: %llx, %zx (%llx %llx)", start, size, aligned_start, aligned_end);
+			eDebug("result: %llu, %zx (%llu %llu)", start, size, i->first, i->second);
 			return;
 		}
 	}

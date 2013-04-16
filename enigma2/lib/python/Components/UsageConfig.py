@@ -5,6 +5,7 @@ from enigma import setTunerTypePriorityOrder, setPreferredTuner, setSpinnerOnOff
 from enigma import Misc_Options, eEnv;
 from Components.NimManager import nimmanager
 from Components.Harddisk import harddiskmanager
+from Components.ServiceList import refreshServiceList
 from SystemInfo import SystemInfo
 import os
 import enigma
@@ -19,6 +20,9 @@ def InitUsageConfig():
 		enigma.eDVBDB.getInstance().setNumberingMode(configElement.value)
 		refreshServiceList()
 	config.usage.alternative_number_mode.addNotifier(alternativeNumberModeChange)
+
+	config.usage.hide_number_markers = ConfigYesNo(default = False)
+	config.usage.hide_number_markers.addNotifier(refreshServiceList)
 
 	config.usage.multiepg_ask_bouquet = ConfigYesNo(default = False)
 	
@@ -278,6 +282,13 @@ def InitUsageConfig():
 	config.subtitles.dvb_subtitles_yellow = ConfigYesNo(default = False)
 	config.subtitles.dvb_subtitles_original_position = ConfigSelection(default = "0", choices = [("0", _("Original")), ("1", _("Fixed")), ("2", _("Relative"))])
 	config.subtitles.dvb_subtitles_centered = ConfigYesNo(default = False)
+	choicelist = []
+	for i in range(-270000, 274500, 4500):
+		if i == 0:
+			choicelist.append(("0", _("No delay")))
+		else:
+			choicelist.append(("%d" % i, "%3.2f sec" % (i / 90000.)))
+	config.subtitles.subtitle_bad_timing_delay = ConfigSelection(default = "0", choices = choicelist)
 	config.subtitles.dvb_subtitles_backtrans = ConfigSelection(default = "0", choices = [
 		("0", _("No transparency")),
 		("25", "10%"),
@@ -407,11 +418,3 @@ def preferredInstantRecordPath():
 
 def defaultMoviePath():
 	return config.usage.default_path.value
-
-def refreshServiceList(configElement = None):
-		from Screens.InfoBar import InfoBar
-		InfoBarInstance = InfoBar.instance
-		if InfoBarInstance is not None:
-			servicelist = InfoBarInstance.servicelist
-			if servicelist:
-				servicelist.setMode()

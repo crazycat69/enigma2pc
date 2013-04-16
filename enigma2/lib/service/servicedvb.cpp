@@ -90,11 +90,12 @@ int eStaticServiceDVBInformation::isPlayable(const eServiceReference &ref, const
 	else
 	{
 		eDVBChannelID chid, chid_ignore;
+		int system;
 		((const eServiceReferenceDVB&)ref).getChannelID(chid);
 		((const eServiceReferenceDVB&)ignore).getChannelID(chid_ignore);
-		return res_mgr->canAllocateChannel(chid, chid_ignore);
+		return res_mgr->canAllocateChannel(chid, chid_ignore, system);
 	}
-	return false;
+	return 0;
 }
 
 PyObject *eStaticServiceDVBInformation::getInfoObject(const eServiceReference &r, int what)
@@ -195,6 +196,7 @@ int eStaticServiceDVBBouquetInformation::isPlayable(const eServiceReference &ref
 	{
 		ePtr<iDVBChannelList> db;
 		ePtr<eDVBResourceManager> res;
+		eServiceReference streamable_service;
 
 		if (eDVBResourceManager::getInstance(res))
 		{
@@ -229,40 +231,43 @@ int eStaticServiceDVBBouquetInformation::isPlayable(const eServiceReference &ref
 				{ 1, 2, 3 }, // -T -C -S
 				{ 2, 1, 3 }  // -T -S -C
 			};
+			int system;
 			((const eServiceReferenceDVB&)*it).getChannelID(chid);
-			int tmp=res->canAllocateChannel(chid, chid_ignore, simulate);
-			switch(tmp)
+			int tmp = res->canAllocateChannel(chid, chid_ignore, system, simulate);
+			if (tmp > 0)
 			{
-				case 0:
-					break;
-				case 30000: // cached DVB-T channel
-				case 1: // DVB-T frontend
-					tmp = prio_map[prio_order][2];
-					break;
-				case 40000: // cached DVB-C channel
-				case 2:
-					tmp = prio_map[prio_order][1];
-					break;
-				default: // DVB-S
-					tmp = prio_map[prio_order][0];
-					break;
+				switch (system)
+				{
+					case iDVBFrontend::feTerrestrial:
+						tmp = prio_map[prio_order][2];
+						break;
+					case iDVBFrontend::feCable:
+						tmp = prio_map[prio_order][1];
+						break;
+					default:
+					case iDVBFrontend::feSatellite:
+						tmp = prio_map[prio_order][0];
+						break;
+				}
 			}
 			if (tmp > cur)
 			{
 				m_playable_service = *it;
 				cur = tmp;
 			}
-		}
-		if (cur)
-			return cur;
-		/* fallback to stream (or pvr) service alternative */
-		for (std::list<eServiceReference>::iterator it(bouquet->m_services.begin()); it != bouquet->m_services.end(); ++it)
-		{
 			if (!it->path.empty())
 			{
-				m_playable_service = *it;
-				return 1;
+				streamable_service = *it;
 			}
+		}
+		if (cur)
+		{
+			return cur;
+		}
+		/* fallback to stream (or pvr) service alternative */
+		if (streamable_service)
+		{
+			m_playable_service = streamable_service;
 		}
 	}
 	m_playable_service = eServiceReference();
@@ -534,40 +539,62 @@ RESULT eDVBPVRServiceOfflineOperations::getListOfFilenames(std::list<std::string
 	return 0;
 }
 
-RESULT eDVBPVRServiceOfflineOperations::reindex()
+static int reindex_work(const std::string& filename)
 {
-	const char *filename = m_ref.path.c_str();
-	eDebug("reindexing %s...", filename);
-
-	eMPEGStreamParserTS parser;
-
-	parser.startSave(filename);
+	/* This does not work, need to call parser.setPid(pid, type) otherwise
+	 * the parser will not actually output any data! */
 
 	eRawFile f;
 
-	int err = f.open(m_ref.path.c_str(), 0);
+	int err = f.open(filename.c_str());
 	if (err < 0)
-		return -1;
+		return err;
+
+	eMPEGStreamParserTS parser; /* Missing packetsize, should be determined from stream? */
+
+	{
+		eDVBTSTools tstools;
+		tstools.openFile(filename.c_str(), 1);
+		int pcr_pid;
+		err = tstools.findPMT(NULL, NULL, &pcr_pid);
+		if (err)
+		{
+			eDebug("reindex - Failed to find PMT");
+			return err;
+		}
+		eDebug("reindex: pcr_pid=0x%x", pcr_pid);
+		parser.setPid(pcr_pid, -1); /* -1 = automatic MPEG2/h264 detection */
+	}
+
+	parser.startSave(filename);
 
 	off_t offset = 0;
-	off_t length = f.length();
-	unsigned char buffer[188*256*4];
+	std::vector<char> buffer(188*1024);
 	while (1)
 	{
-		eDebug("at %08llx / %08llx (%d %%)", offset, length, (int)(offset * 100 / length));
-		int r = f.read(offset, buffer, sizeof(buffer));
+		int r = f.read(offset, &buffer[0], buffer.size());
 		if (!r)
 			break;
 		if (r < 0)
 			return r;
+		parser.parseData(offset, &buffer[0], r);
 		offset += r;
-		parser.parseData(offset, buffer, r);
 	}
 
 	parser.stopSave();
 	f.close();
 
 	return 0;
+}
+
+RESULT eDVBPVRServiceOfflineOperations::reindex()
+{
+	int result;
+	/* Release global interpreter lock */
+	Py_BEGIN_ALLOW_THREADS;
+	result = reindex_work(m_ref.path.c_str());
+	Py_END_ALLOW_THREADS;
+	return result;
 }
 
 DEFINE_REF(eServiceFactoryDVB)
@@ -3346,7 +3373,23 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 			m_subtitle_pages.push_back(tmppage);
 		}
 		else
-			m_subtitle_pages.push_back(page);
+		{
+			int subtitledelay = 0;
+			std::string configvalue;
+			if(!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_bad_timing_delay", configvalue))
+			{
+				subtitledelay = atoi(configvalue.c_str());
+			}
+			if (subtitledelay != 0)
+			{
+				eDVBTeletextSubtitlePage tmppage;
+				tmppage = page;
+				tmppage.m_pts += subtitledelay;
+				m_subtitle_pages.push_back(tmppage);
+			}
+			else
+				m_subtitle_pages.push_back(page);
+		}
 		checkSubtitleTiming();
 	}
 }
@@ -3435,7 +3478,23 @@ void eDVBServicePlay::newDVBSubtitlePage(const eDVBSubtitlePage &p)
 			m_dvb_subtitle_pages.push_back(tmppage);
 		}
 		else
-			m_dvb_subtitle_pages.push_back(p);
+		{
+			int subtitledelay = 0;
+			std::string configvalue;
+			if(!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_bad_timing_delay", configvalue))
+			{
+				subtitledelay = atoi(configvalue.c_str());
+			}
+			if (subtitledelay != 0)
+			{
+				eDVBSubtitlePage tmppage;
+				tmppage = p;
+				tmppage.m_show_time += subtitledelay;
+				m_dvb_subtitle_pages.push_back(tmppage);
+			}
+			else
+				m_dvb_subtitle_pages.push_back(p);
+		}
 		checkSubtitleTiming();
 	}
 }
