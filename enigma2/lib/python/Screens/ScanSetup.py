@@ -9,6 +9,7 @@ from Components.NimManager import nimmanager, getConfigSatlist
 from Components.Label import Label
 from Tools.Directories import resolveFilename, SCOPE_DEFAULTPARTITIONMOUNTDIR, SCOPE_DEFAULTDIR, SCOPE_DEFAULTPARTITION
 from Tools.HardwareInfo import HardwareInfo
+from Screens.InfoBar import InfoBar
 from Screens.MessageBox import MessageBox
 from enigma import eTimer, eDVBFrontendParametersSatellite, eComponentScan, \
 	eDVBSatelliteEquipmentControl, eDVBFrontendParametersTerrestrial, \
@@ -312,6 +313,7 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 		self["actions"] = NumberActionMap(["SetupActions", "MenuActions"],
 		{
 			"ok": self.keyGo,
+			"save": self.keyGo,
 			"cancel": self.keyCancel,
 			"menu": self.doCloseRecursive,
 		}, -2)
@@ -808,7 +810,14 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 		tlist.append(parm)
 
 	def keyGo(self):
-		if self.scan_nims.value == "":
+		infoBarInstance = InfoBar.instance
+		if infoBarInstance:
+			infoBarInstance.checkTimeshiftRunning(self.keyGoCheckTimeshiftCallback)
+		else:
+			self.keyGoCheckTimeshiftCallback(True)
+
+	def keyGoCheckTimeshiftCallback(self, answer):
+		if not answer or self.scan_nims.value == "":
 			return
 		tlist = []
 		flags = None
@@ -969,6 +978,7 @@ class ScanSimple(ConfigListScreen, Screen, CableTransponderSearchSupport):
 		self["actions"] = ActionMap(["SetupActions", "MenuActions"],
 		{
 			"ok": self.keyGo,
+			"save": self.keyGo,
 			"cancel": self.keyCancel,
 			"menu": self.doCloseRecursive,
 		}, -2)
@@ -1028,10 +1038,18 @@ class ScanSimple(ConfigListScreen, Screen, CableTransponderSearchSupport):
 		self.keyGo()
 
 	def keyGo(self):
-		self.scanList = []
-		self.known_networks = set()
-		self.nim_iter=0
-		self.buildTransponderList()
+		InfoBarInstance = InfoBar.instance
+		if InfoBarInstance:
+			InfoBarInstance.checkTimeshiftRunning(self.keyGoCheckTimeshiftCallback)
+		else:
+			self.keyGoCheckTimeshiftCallback(True)
+
+	def keyGoCheckTimeshiftCallback(self, answer):
+		if answer:
+			self.scanList = []
+			self.known_networks = set()
+			self.nim_iter=0
+			self.buildTransponderList()
 
 	def buildTransponderList(self): # this method is called multiple times because of asynchronous stuff
 		APPEND_NOW = 0

@@ -77,10 +77,9 @@ protected:
 public:
 		// iFrontendInformation
 	int getFrontendInfo(int w);
-	PyObject *getFrontendData();
-	PyObject *getFrontendStatus();
-	PyObject *getTransponderData(bool);
-	PyObject *getAll(bool original); // a sum of getFrontendData/Status/TransponderData
+	ePtr<iDVBFrontendData> getFrontendData();
+	ePtr<iDVBFrontendStatus> getFrontendStatus();
+	ePtr<iDVBTransponderData> getTransponderData(bool);
 };
 
 class eSubtitleWidget;
@@ -137,7 +136,8 @@ public:
 	RESULT getEvent(ePtr<eServiceEvent> &evt, int nownext);
 	int getInfo(int w);
 	std::string getInfoString(int w);
-	PyObject *getInfoObject(int w);
+	ePtr<iDVBTransponderData> getTransponderData();
+	void getCaIds(std::vector<int> &caids, std::vector<int> &ecmpids);
 
 		// iAudioTrackSelection	
 	int getNumberOfTracks();
@@ -163,8 +163,11 @@ public:
 	RESULT startTimeshift();
 	RESULT stopTimeshift(bool swToLive=true);
 	int isTimeshiftActive();
+	int isTimeshiftEnabled();
 	RESULT activateTimeshift();
 	RESULT setNextPlaybackFile(const char *fn);
+	RESULT saveTimeshiftFile();
+	std::string getTimeshiftFilename();
 
 		// iCueSheet
 	PyObject *getCutList();
@@ -185,7 +188,7 @@ public:
 	
 		// iStreamableService
 	RESULT stream(ePtr<iStreamableService> &ptr);
-	PyObject *getStreamingData();
+	ePtr<iStreamData> getStreamingData();
 
 protected:
 	friend class eServiceFactoryDVB;
@@ -215,7 +218,7 @@ protected:
 	int m_is_stream;
 
 		/* pvr */
-	int m_is_pvr, m_is_paused, m_timeshift_enabled, m_timeshift_active, m_timeshift_changed;
+	int m_is_pvr, m_is_paused, m_timeshift_enabled, m_timeshift_active, m_timeshift_changed, m_save_timeshift;
 	int m_first_program_info;
 	
 	std::string m_timeshift_file, m_timeshift_file_next;

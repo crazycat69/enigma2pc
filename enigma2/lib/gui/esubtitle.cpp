@@ -31,13 +31,9 @@ void eSubtitleWidget::setPage(const eDVBTeletextSubtitlePage &p)
 	{
 		int width = size().width() - startX * 2;
 		std::string configvalue;
-		bool original_position = (ePythonConfigQuery::getConfigValue("config.subtitles.ttx_subtitle_original_position", configvalue) >= 0 && configvalue == "True");
-		bool rewrap = (ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_rewrap", configvalue) >= 0 && configvalue == "True");
-		int color_mode = 0;
-		if (!ePythonConfigQuery::getConfigValue("config.subtitles.ttx_subtitle_colors", configvalue))
-		{
-			color_mode = atoi(configvalue.c_str());
-		}
+		bool original_position = eConfigManager::getConfigBoolValue("config.subtitles.ttx_subtitle_original_position");
+		bool rewrap = eConfigManager::getConfigBoolValue("config.subtitles.subtitle_rewrap");
+		int color_mode = eConfigManager::getConfigIntValue("config.subtitles.ttx_subtitle_colors", 1);
 		gRGB color;
 		bool original_colors = false;
 		switch (color_mode)
@@ -59,11 +55,7 @@ void eSubtitleWidget::setPage(const eDVBTeletextSubtitlePage &p)
 		{
 			int height = size().height() / 3;
 
-			int lowerborder = 50;
-			if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_position", configvalue))
-			{
-				lowerborder = atoi(configvalue.c_str());
-			}
+			int lowerborder = eConfigManager::getConfigIntValue("config.subtitles.subtitle_position", 50);
 			int line = newpage.m_elements[0].m_source_line;
 			/* create a new page with just one text element */
 			m_page.m_elements.push_back(eDVBTeletextSubtitlePageElement(color, "", 0));
@@ -133,18 +125,15 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 	invalidate(m_visible_region);  // invalidate old visible regions
 	m_visible_region.rects.clear();
 	int line = 0;
-	int original_position = 0;
-	std::string configvalue;
-	if (!ePythonConfigQuery::getConfigValue("config.subtitles.dvb_subtitles_original_position", configvalue))
-		original_position = atoi(configvalue.c_str());
+	int original_position = eConfigManager::getConfigIntValue("config.subtitles.dvb_subtitles_original_position");
 	for (std::list<eDVBSubtitleRegion>::iterator it(m_dvb_page.m_regions.begin()); it != m_dvb_page.m_regions.end(); ++it)
 	{
 		if (original_position)
 		{
 			int lines = m_dvb_page.m_regions.size();
-			if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_position", configvalue))
+			int lowerborder = eConfigManager::getConfigIntValue("config.subtitles.subtitle_position", -1);
+			if (lowerborder >= 0)
 			{
-				int lowerborder = atoi(configvalue.c_str());
 				if (original_position == 1)
 					it->m_position=ePoint(it->m_position.x(), p.m_display_size.height() - (lines - line) * it->m_pixmap->size().height() - lowerborder);
 				else
@@ -165,38 +154,42 @@ void eSubtitleWidget::setPage(const eDVBSubtitlePage &p)
 
 void eSubtitleWidget::setPage(const ePangoSubtitlePage &p)
 {
+	int elements, element, startY, width, height, size_per_element;
+	int lowerborder;
+
 	m_pango_page = p;
 	m_pango_page_ok = 1;
 	invalidate(m_visible_region);  // invalidate old visible regions
 	m_visible_region.rects.clear();
 
-	int elements = m_pango_page.m_elements.size();
-	if (elements)
+	lowerborder = eConfigManager::getConfigIntValue("config.subtitles.subtitle_position", 50);
+
+	elements = m_pango_page.m_elements.size();
+
+	if (elements > 1)
+		startY = size().height() / 2;
+	else
+		startY = size().height() / 3 * 2;
+
+	width = size().width() - startX * 2;
+	height = size().height() - startY;
+
+	if (elements != 0)
+		size_per_element = height / elements;
+	else
+		size_per_element = height;
+
+	for (element = 0; element < elements; element++)
 	{
-		int startY = elements > 1
-			? size().height() / 2
-			: size().height() / 3 * 2;
-		int width = size().width() - startX * 2;
-		int height = size().height() - startY;
-		int size_per_element = height / (elements ? elements : 1);
-		for (int i=0; i<elements; ++i)
-		{
-			eRect &area = m_pango_page.m_elements[i].m_area;
-			area.setLeft(startX);
-			int lowerborder=50;
-			std::string subtitle_position;
-			if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_position", subtitle_position))
-			{
-				lowerborder = atoi(subtitle_position.c_str());
-			}
-			area.setTop(size_per_element * i + startY - lowerborder);
-			area.setWidth(width);
-			area.setHeight(size_per_element);
-			m_visible_region |= area;
-		}
+		eRect& area = m_pango_page.m_elements[element].m_area;
+		area.setLeft(startX);
+		area.setTop(size_per_element * element + startY - lowerborder);
+		area.setWidth(width);
+		area.setHeight(size_per_element);
+		m_visible_region |= area;
 	}
-	int timeout_ms = m_pango_page.m_timeout;
-	m_hide_subtitles_timer->start(timeout_ms, true);
+
+	m_hide_subtitles_timer->start(m_pango_page.m_timeout, true);
 	invalidate(m_visible_region);  // invalidate new regions
 }
 
@@ -240,26 +233,16 @@ int eSubtitleWidget::event(int event, void *data, void *data2)
 		std::string configvalue;
 
 		int rt_halignment_flag;
-		if (ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_alignment", configvalue))
-			configvalue = "center";
-		if (configvalue == "center")
-			rt_halignment_flag = gPainter::RT_HALIGN_CENTER;
+		configvalue = eConfigManager::getConfigValue("config.subtitles.subtitle_alignment");
+		if (configvalue == "right")
+			rt_halignment_flag = gPainter::RT_HALIGN_RIGHT;
 		else if (configvalue == "left")
 			rt_halignment_flag = gPainter::RT_HALIGN_LEFT;
 		else
-			rt_halignment_flag = gPainter::RT_HALIGN_RIGHT;
+			rt_halignment_flag = gPainter::RT_HALIGN_CENTER;
 
-		int borderwidth = 2;
-		if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_borderwidth", configvalue))
-		{
-			borderwidth = atoi(configvalue.c_str());
-		}
-
-		int fontsize = 34;
-		if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_fontsize", configvalue))
-		{
-			fontsize = atoi(configvalue.c_str());
-		}
+		int borderwidth = eConfigManager::getConfigIntValue("config.subtitles.subtitle_borderwidth", 2);
+		int fontsize = eConfigManager::getConfigIntValue("config.subtitles.subtitle_fontsize", 34);
 
 		if (m_pixmap)
 		{
@@ -304,7 +287,7 @@ int eSubtitleWidget::event(int event, void *data, void *data2)
 				text = replace_all(text, "&lt", "<");
 				text = replace_all(text, "&gt", ">");
 
-				bool yellow_color = (ePythonConfigQuery::getConfigValue("config.subtitles.pango_subtitles_yellow", configvalue) >= 0 && configvalue == "True");
+				bool yellow_color = eConfigManager::getConfigBoolValue("config.subtitles.pango_subtitles_yellow");
 				if (yellow_color)
 					text = (std::string) gRGB(255,255,0) + text;
 				text = replace_all(text, "<i>",  yellow_color ? "" : (std::string) gRGB(0,255,255));

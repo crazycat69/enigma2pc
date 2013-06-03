@@ -31,7 +31,6 @@ eDVBServicePMTHandler::eDVBServicePMTHandler()
 	m_dsmcc_pid = -1;
 	m_service_type = livetv;
 	eDVBResourceManager::getInstance(m_resourceManager);
-	CONNECT(m_PMT.tableReady, eDVBServicePMTHandler::PMTready);
 	CONNECT(m_PAT.tableReady, eDVBServicePMTHandler::PATready);
 	CONNECT(m_AIT.tableReady, eDVBServicePMTHandler::AITready);
 	CONNECT(m_OC.tableReady, eDVBServicePMTHandler::OCready);
@@ -49,9 +48,9 @@ void eDVBServicePMTHandler::channelStateChanged(iDVBChannel *channel)
 	channel->getState(state);
 
 	if ((m_last_channel_state != iDVBChannel::state_ok)
-		&& (state == iDVBChannel::state_ok) && (!m_demux))
+		&& (state == iDVBChannel::state_ok))
 	{
-		if (m_channel)
+		if (!m_demux && m_channel)
 		{
 			if (m_pvr_demux_tmp)
 			{
@@ -200,7 +199,6 @@ void eDVBServicePMTHandler::PATready(int)
 			ProgramAssociationConstIterator program;
 			for (program = pat.getPrograms()->begin(); pmtpid == -1 && program != pat.getPrograms()->end(); ++program)
 			{
-				++cnt;
 				if (eServiceID((*program)->getProgramNumber()) == m_reference.getServiceID())
 					pmtpid = (*program)->getProgramMapPid();
 				if (++cnt == 1 && pmtpid_single == -1 && pmtpid == -1)
@@ -317,42 +315,18 @@ void eDVBServicePMTHandler::OCready(int error)
 	m_OC.stop();
 }
 
-PyObject *eDVBServicePMTHandler::getCaIds(bool pair)
+void eDVBServicePMTHandler::getCaIds(std::vector<int> &caids, std::vector<int> &ecmpids)
 {
-	ePyObject ret;
-
 	program prog;
 
-	if ( !getProgramInfo(prog) )
+	if (!getProgramInfo(prog))
 	{
-		if (pair)
+		for (std::list<program::capid_pair>::iterator it = prog.caids.begin(); it != prog.caids.end(); ++it)
 		{
-			int cnt=prog.caids.size();
-			if (cnt)
-			{
-				ret=PyList_New(cnt);
-				std::list<program::capid_pair>::iterator it(prog.caids.begin());
-				while(cnt--)
-				{
-					ePyObject tuple = PyTuple_New(2);
-					PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong(it->caid));
-					PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong((it++)->capid));
-					PyList_SET_ITEM(ret, cnt, tuple);
-				}
-			}
-		}
-		else
-		{
-			std::set<program::capid_pair> set(prog.caids.begin(), prog.caids.end());
-			std::set<program::capid_pair>::iterator it(set.begin());
-			int cnt=set.size();
-			ret=PyList_New(cnt);
-			while(cnt--)
-				PyList_SET_ITEM(ret, cnt, PyInt_FromLong((it++)->caid));
+			caids.push_back(it->caid);
+			ecmpids.push_back(it->capid);
 		}
 	}
-
-	return ret ? (PyObject*)ret : (PyObject*)PyList_New(0);
 }
 
 int eDVBServicePMTHandler::getProgramInfo(program &program)
@@ -363,6 +337,7 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 	int cached_vpid = -1;
 	int cached_tpid = -1;
 	int ret = -1;
+	uint8_t adapter, demux;
 
 	eDebug("PMT HANDLER INPUT !!!");
 	if (m_have_cached_program)
@@ -371,16 +346,7 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 		return 0;
 	}
 
-	program.videoStreams.clear();
-	program.audioStreams.clear();
-	program.subtitleStreams.clear();
-	program.pcrPid = -1;
-	program.pmtPid = -1;
-	program.textPid = -1;
-	program.aitPid = -1;
-
-	program.defaultAudioStream = 0;
-	program.defaultSubtitleStream = -1;
+	eDVBPMTParser::clearProgramInfo(program);
 
 	if ( m_service && !m_service->cacheEmpty() )
 	{
@@ -390,8 +356,9 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 		cached_tpid = m_service->getCacheEntry(eDVBService::cTPID);
 	}
 
-	if ( ((m_service && m_service->usePMT()) || !m_service) && !m_PMT.getCurrent(ptr))
+	if ( ((m_service && m_service->usePMT()) || !m_service) && eDVBPMTParser::getProgramInfo(program) >= 0)
 	{
+		unsigned int i;
 		int first_ac3 = -1;
 		int audio_cached = -1;
 		int autoaudio_mpeg = -1;
@@ -400,16 +367,18 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 
 		std::string configvalue;
 		std::vector<std::string> autoaudio_languages;
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_autoselect1", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect1");
+		if (configvalue != "" && configvalue != "None")
 			autoaudio_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_autoselect2", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect2");
+		if (configvalue != "" && configvalue != "None")
 			autoaudio_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_autoselect3", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect3");
+		if (configvalue != "" && configvalue != "None")
 			autoaudio_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_autoselect4", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.audio_autoselect4");
+		if (configvalue != "" && configvalue != "None")
 			autoaudio_languages.push_back(configvalue);
-
-		audioStream *prev_audio = 0;
 
 		int autosub_txt_normal = -1;
 		int autosub_txt_hearing = -1;
@@ -418,459 +387,102 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 		int autosub_level =4;
 
 		std::vector<std::string> autosub_languages;
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_autoselect1", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.subtitle_autoselect1");
+		if (configvalue != "" && configvalue != "None")
 			autosub_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_autoselect2", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.subtitle_autoselect2");
+		if (configvalue != "" && configvalue != "None")
 			autosub_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_autoselect3", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.subtitle_autoselect3");
+		if (configvalue != "" && configvalue != "None")
 			autosub_languages.push_back(configvalue);
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_autoselect4", configvalue) && configvalue != "None")
+		configvalue = eConfigManager::getConfigValue("config.autolanguage.subtitle_autoselect4");
+		if (configvalue != "" && configvalue != "None")
 			autosub_languages.push_back(configvalue);
 
-		eDVBTableSpec table_spec;
-		ptr->getSpec(table_spec);
-		program.pmtPid = table_spec.pid < 0x1fff ? table_spec.pid : -1;
-		std::vector<ProgramMapSection*>::const_iterator i;
-		for (i = ptr->getSections().begin(); i != ptr->getSections().end(); ++i)
+		m_dsmcc_pid = program.dsmccPid;
+		if (program.aitPid >= 0)
 		{
-			const ProgramMapSection &pmt = **i;
-			int is_hdmv = 0;
+			m_AIT.begin(eApp, eDVBAITSpec(program.aitPid), m_demux);
+		}
 
-			program.pcrPid = pmt.getPcrPid();
-
-			for (DescriptorConstIterator desc = pmt.getDescriptors()->begin();
-				desc != pmt.getDescriptors()->end(); ++desc)
+		for (i = 0; i < program.videoStreams.size(); i++)
+		{
+			if (program.videoStreams[i].pid == cached_vpid)
 			{
-				if ((*desc)->getTag() == CA_DESCRIPTOR)
+				/* put cached vpid at the front of the videoStreams vector */
+				if (i > 0)
 				{
-					CaDescriptor *descr = (CaDescriptor*)(*desc);
-					program::capid_pair pair;
-					pair.caid = descr->getCaSystemId();
-					pair.capid = descr->getCaPid();
-					program.caids.push_back(pair);
+					videoStream tmp = program.videoStreams[i];
+					program.videoStreams[i] = program.videoStreams[0];
+					program.videoStreams[0] = tmp;
 				}
-				else if ((*desc)->getTag() == REGISTRATION_DESCRIPTOR)
-				{
-					RegistrationDescriptor *d = (RegistrationDescriptor*)(*desc);
-					if (d->getFormatIdentifier() == 0x48444d56) // HDMV
-						is_hdmv = 1;
-				}
-			}
-
-			ElementaryStreamInfoConstIterator es;
-			for (es = pmt.getEsInfo()->begin(); es != pmt.getEsInfo()->end(); ++es)
-			{
-				int isaudio = 0, isvideo = 0, issubtitle = 0, forced_video = 0, forced_audio = 0, isteletext = 0;
-				int streamtype = (*es)->getType();
-				videoStream video;
-				audioStream audio;
-				audio.component_tag=video.component_tag=-1;
-				video.type = videoStream::vtMPEG2;
-				audio.type = audioStream::atMPEG;
-				audio.rdsPid = -1;
-				video.orig_streamtype= streamtype;
-
-				switch (streamtype)
-				{
-				case 0x1b: // AVC Video Stream (MPEG4 H264)
-					video.type = videoStream::vtMPEG4_H264;
-					isvideo = 1;
-					//break; fall through !!!
-				case 0x10: // MPEG 4 Part 2
-					if (!isvideo)
-					{
-						video.type = videoStream::vtMPEG4_Part2;
-						isvideo = 1;
-					}
-					//break; fall through !!!
-				case 0x01: // MPEG 1 video
-					if (!isvideo)
-						video.type = videoStream::vtMPEG1;
-					//break; fall through !!!
-				case 0x02: // MPEG 2 video
-					isvideo = 1;
-					forced_video = 1;
-					//break; fall through !!!
-				case 0x03: // MPEG 1 audio
-				case 0x04: // MPEG 2 audio:
-					if (!isvideo) {
-						isaudio = 1;
-						forced_audio = 1;
-					}
-					//break; fall through !!!
-				case 0x0f: // MPEG 2 AAC
-					if (!isvideo && !isaudio)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atAAC;
-						forced_audio = 1;
-					}
-					//break; fall through !!!
-				case 0x11: // MPEG 4 AAC
-					if (!isvideo && !isaudio)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atAACHE;
-						forced_audio = 1;
-					}
-				case 0x80: // user private ... but bluray LPCM
-				case 0xA0: // bluray secondary LPCM
-					if (!isvideo && !isaudio && is_hdmv)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atLPCM;
-					}
-				case 0x81: // user private ... but bluray AC3
-				case 0xA1: // bluray secondary AC3
-					if (!isvideo && !isaudio)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atAC3;
-					}
-				case 0x82: // bluray DTS (dvb user private...)
-				case 0xA2: // bluray secondary DTS
-					if (!isvideo && !isaudio && is_hdmv)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atDTS;
-					}
-				case 0x86: // bluray DTS-HD (dvb user private...)
-				case 0xA6: // bluray secondary DTS-HD
-					if (!isvideo && !isaudio && is_hdmv)
-					{
-						isaudio = 1;
-						audio.type = audioStream::atDTSHD;
-					}
-				case 0x06: // PES Private
-				case 0xEA: // TS_PSI_ST_SMPTE_VC1
-				{
-					int num_descriptors = 0;
-					for (DescriptorConstIterator desc = (*es)->getDescriptors()->begin();
-						desc != (*es)->getDescriptors()->end(); ++desc)
-					{
-						uint8_t tag = (*desc)->getTag();
-						/* check descriptors to get the exakt stream type. */
-						++num_descriptors;
-						if (!forced_video && !forced_audio)
-						{
-							switch (tag)
-							{
-							case AUDIO_STREAM_DESCRIPTOR:
-								isaudio = 1;
-								break;
-							case VIDEO_STREAM_DESCRIPTOR:
-							{
-								isvideo = 1;
-								VideoStreamDescriptor *d = (VideoStreamDescriptor*)(*desc);
-								if (d->getMpeg1OnlyFlag())
-									video.type = videoStream::vtMPEG1;
-								break;
-							}
-							case SUBTITLING_DESCRIPTOR:
-							{
-								SubtitlingDescriptor *d = (SubtitlingDescriptor*)(*desc);
-								const SubtitlingList *list = d->getSubtitlings();
-								subtitleStream s;
-								s.pid = (*es)->getPid();
-								for (SubtitlingConstIterator it(list->begin()); it != list->end(); ++it)
-								{
-									s.subtitling_type = (*it)->getSubtitlingType();
-									switch(s.subtitling_type)
-									{
-									case 0x10 ... 0x13: // dvb subtitles normal
-									case 0x20 ... 0x23: // dvb subtitles hearing impaired
-										break;
-									default:
-										eDebug("dvb subtitle %s PID %04x with wrong subtitling type (%02x)... force 0x10!!",
-										s.language_code.c_str(), s.pid, s.subtitling_type);
-										s.subtitling_type = 0x10;
-										break;
-									}
-									s.composition_page_id = (*it)->getCompositionPageId();
-									s.ancillary_page_id = (*it)->getAncillaryPageId();
-									std::string language = (*it)->getIso639LanguageCode();
-									s.language_code = language;
-//								eDebug("add dvb subtitle %s PID %04x, type %d, composition page %d, ancillary_page %d", s.language_code.c_str(), s.pid, s.subtitling_type, s.composition_page_id, s.ancillary_page_id);
-
-									if (!language.empty())
-									{
-										int x = 1;
-										for (std::vector<std::string>::iterator it2 = autosub_languages.begin();x <= autosub_level && it2 != autosub_languages.end();x++,it2++)
-										{
-											if ((*it2).find(language) != std::string::npos)
-											{
-												autosub_level = x;
-												if (s.subtitling_type >= 0x20)
-													autosub_dvb_hearing = program.subtitleStreams.size();
-												else
-													autosub_dvb_normal = program.subtitleStreams.size();
-												break;
-											}
-										}
-									}
-									issubtitle = 1;
-									program.subtitleStreams.push_back(s);
-								}
-								break;
-							}
-							case TELETEXT_DESCRIPTOR:
-								if ( program.textPid == -1 || (*es)->getPid() == cached_tpid )
-								{
-									subtitleStream s;
-									s.subtitling_type = 0x01; // EBU TELETEXT SUBTITLES
-									s.pid = program.textPid = (*es)->getPid();
-									TeletextDescriptor *d = (TeletextDescriptor*)(*desc);
-									isteletext = 1;
-									const VbiTeletextList *list = d->getVbiTeletexts();
-									std::string language;
-									for (VbiTeletextConstIterator it(list->begin()); it != list->end(); ++it)
-									{
-										switch((*it)->getTeletextType())
-										{
-										case 0x02: // Teletext subtitle page
-										case 0x05: // Teletext subtitle page for hearing impaired pepople
-											language = (*it)->getIso639LanguageCode();
-											s.language_code = language;
-											s.teletext_page_number = (*it)->getTeletextPageNumber();
-											s.teletext_magazine_number = (*it)->getTeletextMagazineNumber();
-//										eDebug("add teletext subtitle %s PID %04x, page number %d, magazine number %d", s.language_code.c_str(), s.pid, s.teletext_page_number, s.teletext_magazine_number);
-											if (!language.empty())
-											{
-												int x = 1;
-												for (std::vector<std::string>::iterator it2 = autosub_languages.begin();x <= autosub_level && it2 != autosub_languages.end();x++,it2++)
-												{
-													if ((*it2).find(language) != std::string::npos)
-													{
-														autosub_level = x;
-														if (s.subtitling_type == 0x05)
-															autosub_txt_hearing = program.subtitleStreams.size();
-														else
-															autosub_txt_normal = program.subtitleStreams.size();
-														break;
-													}
-												}
-											}
-											program.subtitleStreams.push_back(s);
-											issubtitle=1;
-										default:
-											break;
-										}
-									}
-								}
-								break;
-							case DTS_DESCRIPTOR:
-								isaudio = 1;
-								audio.type = audioStream::atDTS;
-								break;
-							case 0x2B: // TS_PSI_DT_MPEG2_AAC
-								isaudio = 1;
-								audio.type = audioStream::atAAC; // MPEG2-AAC
-								break;
-							case 0x1C: // TS_PSI_DT_MPEG4_Audio
-							case AAC_DESCRIPTOR:
-								isaudio = 1;
-								audio.type = audioStream::atAACHE; // MPEG4-AAC
-								break;
-							case AC3_DESCRIPTOR:
-								isaudio = 1;
-								audio.type = audioStream::atAC3;
-								break;
-							case ENHANCED_AC3_DESCRIPTOR:
-								isaudio = 1;
-								audio.type = audioStream::atDDP;
-								break;
-							case REGISTRATION_DESCRIPTOR: /* some services don't have a separate AC3 descriptor */
-							{
-								RegistrationDescriptor *d = (RegistrationDescriptor*)(*desc);
-								switch (d->getFormatIdentifier())
-								{
-								case 0x44545331 ... 0x44545333: // DTS1/DTS2/DTS3
-									isaudio = 1;
-									audio.type = audioStream::atDTS;
-									break;
-								case 0x41432d33: // == 'AC-3'
-									isaudio = 1;
-									audio.type = audioStream::atAC3;
-									break;
-								case 0x42535344: // == 'BSSD' (LPCM)
-									isaudio = 1;
-									audio.type = audioStream::atLPCM;
-									break;
-								case 0x56432d31: // == 'VC-1'
-								{
-									const AdditionalIdentificationInfoVector *vec = d->getAdditionalIdentificationInfo();
-									if (vec->size() > 1 && (*vec)[0] == 0x01) // subdescriptor tag
-									{
-										if ((*vec)[1] >= 0x90) // profile_level
-											video.type = videoStream::vtVC1; // advanced profile
-										else
-											video.type = videoStream::vtVC1_SM; // simple main
-										isvideo = 1;
-									}
-								}
-								default:
-									break;
-								}
-								break;
-							}
-							case 0x28: // TS_PSI_DT_AVC
-								isvideo = 1;
-								video.type = videoStream::vtMPEG4_H264;
-								break;
-							case 0x1B: // TS_PSI_DT_MPEG4_Video
-								isvideo = 1;
-								video.type = videoStream::vtMPEG4_Part2;
-								break;
-							default:
-								break;
-							}
-						}
-						switch (tag)
-						{
-						case ISO_639_LANGUAGE_DESCRIPTOR:
-							if (!isvideo)
-							{
-								const Iso639LanguageList *languages = ((Iso639LanguageDescriptor*)*desc)->getIso639Languages();
-								/* use last language code */
-								int cnt=0;
-								for (Iso639LanguageConstIterator i=languages->begin(); i != languages->end(); ++i)
-								{
-									std::string language=(*i)->getIso639LanguageCode();
-									if ( cnt==0 )
-										audio.language_code = language;
-									else
-										audio.language_code += "/" + language;
-									cnt++;
-										
-									if (!language.empty())
-									{
-										int x = 1;
-										for (std::vector<std::string>::iterator it = autoaudio_languages.begin();x <= autoaudio_level && it != autoaudio_languages.end();x++,it++)
-										{
-											if ((*it).find(language) != std::string::npos)
-											{
-												if (audio.type == audioStream::atMPEG && (autoaudio_level > x || autoaudio_mpeg == -1)) 
-													autoaudio_mpeg = program.audioStreams.size();
-												else if (audio.type != audioStream::atMPEG && (autoaudio_level > x || autoaudio_ac3 == -1))
-													autoaudio_ac3 = program.audioStreams.size();
-												autoaudio_level = x;
-												break;
-											}
-										}
-									}
-								}
-							}
-							break;
-						case STREAM_IDENTIFIER_DESCRIPTOR:
-							audio.component_tag =
-								video.component_tag =
-									((StreamIdentifierDescriptor*)*desc)->getComponentTag();
-							break;
-						case CA_DESCRIPTOR:
-						{
-							CaDescriptor *descr = (CaDescriptor*)(*desc);
-							program::capid_pair pair;
-							pair.caid = descr->getCaSystemId();
-							pair.capid = descr->getCaPid();
-							program.caids.push_back(pair);
-							break;
-						}
-						default:
-							break;
-						}
-					}
-					if (!num_descriptors && streamtype == 0x06 && prev_audio)
-					{
-						prev_audio->rdsPid = (*es)->getPid();
-						eDebug("Rds PID %04x detected ? ! ?", prev_audio->rdsPid);
-					}
-					prev_audio = 0;
-					break;
-				}
-				case 0x05: /* ITU-T Rec. H.222.0 | ISO/IEC 13818-1 private sections */
-				{
-					for (DescriptorConstIterator desc = (*es)->getDescriptors()->begin();
-						desc != (*es)->getDescriptors()->end(); ++desc)
-					{
-						switch ((*desc)->getTag())
-						{
-						case APPLICATION_SIGNALLING_DESCRIPTOR:
-							program.aitPid = (*es)->getPid();
-							m_AIT.begin(eApp, eDVBAITSpec(program.aitPid), m_demux);
-							break;
-						}
-					}
-					break;
-				}
-				case 0x0b: /* ISO/IEC 13818-6 DSM-CC U-N Messages */
-				{
-					for (DescriptorConstIterator desc = (*es)->getDescriptors()->begin();
-						desc != (*es)->getDescriptors()->end(); ++desc)
-					{
-						switch ((*desc)->getTag())
-						{
-						case CAROUSEL_IDENTIFIER_DESCRIPTOR:
-							m_dsmcc_pid = (*es)->getPid();
-							break;
-						case STREAM_IDENTIFIER_DESCRIPTOR:
-							break;
-						}
-					}
-					break;
-				}
-				default:
-					break;
-				}
-				if (isteletext && (isaudio || isvideo))
-				{
-					eDebug("ambiguous streamtype for PID %04x detected.. forced as teletext!", (*es)->getPid());
-					continue; // continue with next PID
-				}
-				else if (issubtitle && (isaudio || isvideo))
-					eDebug("ambiguous streamtype for PID %04x detected.. forced as subtitle!", (*es)->getPid());
-				else if (isaudio && isvideo)
-					eDebug("ambiguous streamtype for PID %04x detected.. forced as video!", (*es)->getPid());
-				if (issubtitle) // continue with next PID
-					continue;
-				else if (isvideo)
-				{
-					video.pid = (*es)->getPid();
-					if ( !program.videoStreams.empty() && video.pid == cached_vpid )
-					{
-						program.videoStreams.push_back(program.videoStreams[0]);
-						program.videoStreams[0] = video;
-					}
-					else
-						program.videoStreams.push_back(video);
-				}
-				else if (isaudio)
-				{
-					audio.pid = (*es)->getPid();
-
-					/* if we find the cached pids, this will be our default stream */
-					if (audio.pid == cached_apid_ac3 || audio.pid == cached_apid_mpeg)
-						audio_cached = program.audioStreams.size();
-
-					/* also, we need to know the first non-mpeg (i.e. "ac3"/dts/...) stream */
-					if ((audio.type != audioStream::atMPEG) && ((first_ac3 == -1) || (audio.pid == cached_apid_ac3)))
-						first_ac3 = program.audioStreams.size();
-
-					program.audioStreams.push_back(audio);
-					prev_audio = &program.audioStreams.back();
-				}
-				else
-					continue;
+				break;
 			}
 		}
-		ret = 0;
+		for (i = 0; i < program.audioStreams.size(); i++)
+		{
+			if (program.audioStreams[i].pid == cached_apid_ac3 || program.audioStreams[i].pid == cached_apid_mpeg)
+			{
+				/* if we find the cached pids, this will be our default stream */
+				audio_cached = i;
+			}
+			/* also, we need to know the first non-mpeg (i.e. "ac3"/dts/...) stream */
+			if ((program.audioStreams[i].type != audioStream::atMPEG) && ((first_ac3 == -1) || (program.audioStreams[i].pid == cached_apid_ac3)))
+			{
+				first_ac3 = i;
+			}
+			if (!program.audioStreams[i].language_code.empty())
+			{
+				int x = 1;
+				for (std::vector<std::string>::iterator it = autoaudio_languages.begin();x <= autoaudio_level && it != autoaudio_languages.end();x++,it++)
+				{
+					if ((*it).find(program.audioStreams[i].language_code) != std::string::npos)
+					{
+						if (program.audioStreams[i].type == audioStream::atMPEG && (autoaudio_level > x || autoaudio_mpeg == -1)) 
+							autoaudio_mpeg = i;
+						else if (program.audioStreams[i].type != audioStream::atMPEG && (autoaudio_level > x || autoaudio_ac3 == -1))
+							autoaudio_ac3 = i;
+						autoaudio_level = x;
+						break;
+					}
+				}
+			}
+		}
+		for (i = 0; i < program.subtitleStreams.size(); i++)
+		{
+			if (!program.subtitleStreams[i].language_code.empty())
+			{
+				int x = 1;
+				for (std::vector<std::string>::iterator it2 = autosub_languages.begin();x <= autosub_level && it2 != autosub_languages.end();x++,it2++)
+				{
+					if ((*it2).find(program.subtitleStreams[i].language_code) != std::string::npos)
+					{
+						autosub_level = x;
+						if (program.subtitleStreams[i].subtitling_type >= 0x10)
+						{
+							/* DVB subs */
+							if (program.subtitleStreams[i].subtitling_type >= 0x20)
+								autosub_dvb_hearing = i;
+							else
+								autosub_dvb_normal = i;
+						}
+						else
+						{
+							/* TXT subs */
+							if (program.subtitleStreams[i].subtitling_type == 0x05)
+								autosub_txt_hearing = i;
+							else
+								autosub_txt_normal = i;
+						}
+						break;
+					}
+				}
+			}
+		}
 
-		bool defaultac3 = false;
-		bool useaudio_cache = false;
-
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_defaultac3", configvalue))
-			defaultac3 = configvalue == "True";
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.audio_usecache", configvalue))
-			useaudio_cache = configvalue == "True";
+		bool defaultac3 = eConfigManager::getConfigBoolValue("config.autolanguage.audio_defaultac3");
+		bool useaudio_cache = eConfigManager::getConfigBoolValue("config.autolanguage.audio_usecache");
 
 		if (useaudio_cache && audio_cached != -1)
 			program.defaultAudioStream = audio_cached;
@@ -891,19 +503,10 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 				program.defaultAudioStream = autoaudio_ac3;
 		}
 
-		bool allow_hearingimpaired = false;
-		bool default_hearingimpaired = false;
-		bool defaultdvb = false;
-		int equallanguagemask = false;
-
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_hearingimpaired", configvalue))
-			allow_hearingimpaired = configvalue == "True";
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_defaultimpaired", configvalue))
-			default_hearingimpaired = configvalue == "True";
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_defaultdvb", configvalue))
-			defaultdvb = configvalue == "True";
-		if (!ePythonConfigQuery::getConfigValue("config.autolanguage.equal_languages", configvalue))
-			equallanguagemask = atoi(configvalue.c_str());
+		bool allow_hearingimpaired = eConfigManager::getConfigBoolValue("config.autolanguage.subtitle_hearingimpaired");
+		bool default_hearingimpaired = eConfigManager::getConfigBoolValue("config.autolanguage.subtitle_defaultimpaired");
+		bool defaultdvb = eConfigManager::getConfigBoolValue("config.autolanguage.subtitle_defaultdvb");
+		int equallanguagemask = eConfigManager::getConfigIntValue("config.autolanguage.equal_languages");
 
 		if (defaultdvb)
 		{
@@ -937,6 +540,8 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 		}
 		if (program.defaultSubtitleStream != -1 && (equallanguagemask & (1<<(autosub_level-1))) == 0 && program.subtitleStreams[program.defaultSubtitleStream].language_code.compare(program.audioStreams[program.defaultAudioStream].language_code) == 0 )
 			program.defaultSubtitleStream = -1;
+
+		ret = 0;
 	}
 	else if ( m_service && !m_service->cacheEmpty() )
 	{
@@ -990,6 +595,14 @@ int eDVBServicePMTHandler::getProgramInfo(program &program)
 		}
 		if ( cnt )
 			ret = 0;
+	}
+
+	if (m_demux)
+	{
+		m_demux->getCAAdapterID(adapter);
+		program.adapterId = adapter;
+		m_demux->getCADemuxID(demux);
+		program.demuxId = demux;
 	}
 
 	m_cached_program = program;
@@ -1118,11 +731,12 @@ int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, int use_decode_dem
 				tstools.setSource(source, NULL);
 			if (b)
 			{
-				int service_id;
-				if (!tstools.findPMT(&m_pmt_pid, &service_id, NULL))
+				eDVBPMTParser::program program;
+				if (!tstools.findPMT(program))
 				{
-					eDebug("PMT pid found on pid %04x, service id %d", m_pmt_pid, service_id);
-					m_reference.setServiceID(service_id);
+					m_pmt_pid = program.pmtPid;
+					eDebug("PMT pid found on pid %04x, service id %d", m_pmt_pid, program.serviceId);
+					m_reference.setServiceID(program.serviceId);
 				}
 			}
 			else
@@ -1155,9 +769,7 @@ int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, int use_decode_dem
 			if (ref.path.empty())
 			{
 				m_dvb_scan = new eDVBScan(m_channel, true, false);
-				std::string disable_background_scan;
-				if (ePythonConfigQuery::getConfigValue("config.misc.disable_background_scan", disable_background_scan) < 0
-					|| disable_background_scan != "True")
+				if (!eConfigManager::getConfigBoolValue("config.misc.disable_background_scan"))
 				{
 					/*
 					 * not starting a dvb scan triggers what appears to be a
@@ -1189,9 +801,7 @@ int eDVBServicePMTHandler::tuneExt(eServiceReferenceDVB &ref, int use_decode_dem
 
 			if (m_service_type == offline) 
 			{
-				std::string delay;
-				ePythonConfigQuery::getConfigValue("config.recording.offline_decode_delay", delay);
-				m_pvr_channel->setOfflineDecodeMode(atoi(delay.c_str()));
+				m_pvr_channel->setOfflineDecodeMode(eConfigManager::getConfigIntValue("config.recording.offline_decode_delay"));
 			}
 		}
 	}
@@ -1238,55 +848,4 @@ void eDVBServicePMTHandler::free()
 	m_channel = 0;
 	m_pvr_channel = 0;
 	m_demux = 0;
-}
-
-static PyObject *createTuple(int pid, const char *type)
-{
-	PyObject *r = PyTuple_New(2);
-	PyTuple_SET_ITEM(r, 0, PyInt_FromLong(pid));
-	PyTuple_SET_ITEM(r, 1, PyString_FromString(type));
-	return r;
-}
-
-static inline void PyList_AppendSteal(PyObject *list, PyObject *item)
-{
-	PyList_Append(list, item);
-	Py_DECREF(item);
-}
-
-extern void PutToDict(ePyObject &dict, const char*key, ePyObject item); // defined in dvb/frontend.cpp
-
-PyObject *eDVBServicePMTHandler::program::createPythonObject()
-{
-	ePyObject r = PyDict_New();
-	ePyObject l = PyList_New(0);
-
-	PyList_AppendSteal(l, createTuple(0, "pat"));
-
-	if (pmtPid != -1)
-		PyList_AppendSteal(l, createTuple(pmtPid, "pmt"));
-
-	for (std::vector<eDVBServicePMTHandler::videoStream>::const_iterator
-			i(videoStreams.begin()); 
-			i != videoStreams.end(); ++i)
-		PyList_AppendSteal(l, createTuple(i->pid, "video"));
-
-	for (std::vector<eDVBServicePMTHandler::audioStream>::const_iterator
-			i(audioStreams.begin()); 
-			i != audioStreams.end(); ++i)
-		PyList_AppendSteal(l, createTuple(i->pid, "audio"));
-
-	for (std::vector<eDVBServicePMTHandler::subtitleStream>::const_iterator
-			i(subtitleStreams.begin());
-			i != subtitleStreams.end(); ++i)
-		PyList_AppendSteal(l, createTuple(i->pid, "subtitle"));
-
-	PyList_AppendSteal(l, createTuple(pcrPid, "pcr"));
-
-	if (textPid != -1)
-		PyList_AppendSteal(l, createTuple(textPid, "text"));
-
-	PutToDict(r, "pids", l);
-
-	return r;
 }

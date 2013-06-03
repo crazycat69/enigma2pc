@@ -4,7 +4,6 @@ from Tools.BoundFunction import boundFunction
 from Tools.DreamboxHardware import setFPWakeuptime, getFPWakeuptime, getFPWasTimerWakeup
 from time import time
 import RecordTimer
-import SleepTimer
 import Screens.Standby
 import NavigationInstance
 import ServiceReference
@@ -31,7 +30,9 @@ class Navigation:
 		self.currentlyPlayingServiceOrGroup = None
 		self.currentlyPlayingService = None
 		self.RecordTimer = RecordTimer.RecordTimer()
+		self.__wasTimerWakeup = False
 		if getFPWasTimerWakeup():
+			self.__wasTimerWakeup = True
 			if nextRecordTimerAfterEventActionAuto:
 				# We need to give the systemclock the chance to sync with the transponder time, 
 				# before we will make the decision about whether or not we need to shutdown 
@@ -39,7 +40,9 @@ class Navigation:
 				self.recordshutdowntimer = eTimer()
 				self.recordshutdowntimer.callback.append(self.checkShutdownAfterRecording)
 				self.recordshutdowntimer.start(30000, True)
-		self.SleepTimer = SleepTimer.SleepTimer()
+
+	def wasTimerWakeup(self):
+		return self.__wasTimerWakeup
 
 	def checkShutdownAfterRecording(self):
 		if len(self.getRecordings()) or abs(self.RecordTimer.getNextRecordingTime() - time()) <= 360:
@@ -68,6 +71,7 @@ class Navigation:
 		if ref is None:
 			self.stopService()
 			return 0
+		InfoBarInstance = InfoBar.instance
 		if not checkParentalControl or parentalControl.isServicePlayable(ref, boundFunction(self.playService, checkParentalControl = False)):
 			if ref.flags & eServiceReference.isGroup:
 				if not oldref:
@@ -86,7 +90,6 @@ class Navigation:
 				self.pnav.stopService()
 				self.currentlyPlayingServiceReference = playref
 				self.currentlyPlayingServiceOrGroup = ref
-				InfoBarInstance = InfoBar.instance
 				if InfoBarInstance is not None:
 					InfoBarInstance.servicelist.servicelist.setCurrent(ref)
 				if self.pnav.playService(playref):
@@ -94,8 +97,8 @@ class Navigation:
 					self.currentlyPlayingServiceReference = None
 					self.currentlyPlayingServiceOrGroup = None
 				return 0
-		else:
-			self.stopService()
+		elif oldref:
+			InfoBarInstance.servicelist.servicelist.setCurrent(oldref)
 		return 1
 	
 	def getCurrentlyPlayingServiceReference(self):

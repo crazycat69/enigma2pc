@@ -89,6 +89,8 @@
 	<map context="InfobarEPGActions">
 		<key id="KEY_INFO" mapto="showEventInfo" flags="b" />
 		<key id="KEY_INFO" mapto="showEventInfoPlugin" flags="l" />
+		<key id="KEY_EPG" mapto="showEventInfoSingleEPG" flags="b" />
+		<key id="KEY_EPG" mapto="showEventGuidePlugin" flags="l" />
 	</map>
 	
 	<map context="InfobarInstantRecord">
@@ -245,6 +247,14 @@
 
 	<map context="InfobarSubserviceSelectionActions">
 		<key id="KEY_GREEN" mapto="subserviceSelection" flags="b" />
+	</map>
+
+	<map context="InfobarTimerButtonActions">
+		<key id="KEY_PROGRAM" mapto="timerSelection" flags="m" />
+	</map>
+
+	<map context="InfobarVmodeButtonActions">
+		<key id="KEY_VMODE" mapto="vmodeSelection" flags="m" />
 	</map>
 
 	<map context="InfobarSubserviceQuickzapActions">
@@ -624,6 +634,8 @@
 		<key id="KEY_NEXT" mapto="nextService" flags="m" />
 		<key id="KEY_PREVIOUS" mapto="prevService" flags="m" />
 		<key id="KEY_TV" mapto="preview" flags="m" />
+		<key id="KEY_REWIND" mapto="prevDay" flags="m" />
+		<key id="KEY_FASTFORWARD" mapto="nextDay" flags="m" />
 	</map>
 
 	<map context="EventViewActions">

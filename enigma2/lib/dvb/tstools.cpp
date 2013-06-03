@@ -1,4 +1,5 @@
 #include <lib/dvb/tstools.h>
+#include <lib/dvb/specs.h>
 #include <lib/base/eerror.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -7,6 +8,48 @@
 
 static const int m_maxrange = 256*1024;
 
+DEFINE_REF(eTSFileSectionReader);
+
+eTSFileSectionReader::eTSFileSectionReader(eMainloop *context)
+{
+	sectionSize = 0;
+}
+
+eTSFileSectionReader::~eTSFileSectionReader()
+{
+}
+
+void eTSFileSectionReader::data(unsigned char *packet, unsigned int size)
+{
+	if (sectionSize + size <= sizeof(sectionData))
+	{
+		memcpy(&sectionData[sectionSize], packet, size);
+		sectionSize += size;
+	}
+	if (sectionSize >= (unsigned int)(3 + ((sectionData[1] & 0x0f) << 8) + sectionData[2]))
+	{
+		sectionSize = 0;
+		read(sectionData);
+	}
+}
+
+RESULT eTSFileSectionReader::start(const eDVBSectionFilterMask &mask)
+{
+	sectionSize = 0;
+	return 0;
+}
+
+RESULT eTSFileSectionReader::stop()
+{
+	sectionSize = 0;
+	return 0;
+}
+
+RESULT eTSFileSectionReader::connectRead(const Slot1<void,const __u8*> &r, ePtr<eConnection> &conn)
+{
+	conn = new eConnection(this, read.connect(r));
+	return 0;
+}
 
 eDVBTSTools::eDVBTSTools():
 	m_pid(-1),
@@ -374,9 +417,23 @@ int eDVBTSTools::getOffset(off_t &offset, pts_t &pts, int marg)
 				offset = l->second;
 				offset += ((pts - l->first) * (pts_t)bitrate) / 8ULL / 90000ULL;
 				offset -= offset % 188;
+				if (offset > m_offset_end)
+				{
+					/*
+					 * NOTE: the bitrate calculation can be way off, especially when the pts difference is small.
+					 * So the calculated offset might be far ahead of the end of the file.
+					 * When that happens, avoid poisoning our sample list (m_samples) with an invalid value,
+					 * which could eventually cause (timeshift) playback to be stopped.
+					 * Because the file could be growing (timeshift), instead of returning the currently known end
+					 * of file offset, we return an offset 1MB ahead of the end of the file.
+					 * This allows jumping to the live point of the timeshift, for instance.
+					 */
+					offset = m_offset_end + 1024 * 1024;
+					return 0;
+				}
 
 				p = pts;
-				
+
 				if (!takeSample(offset, p))
 				{
 					int diff = (p - pts) / 90;
@@ -443,6 +500,19 @@ void eDVBTSTools::calcBegin()
 			else
 				m_futile = 1;
 		}
+		if (m_begin_valid)
+		{
+			/*
+			 * We've just calculated the begin position, which will have an effect on the
+			 * calculated length.
+			 * (when the end position had been determined before the begin position, the length
+			 * will be invalid)
+			 * So we force the end position to be (re-)calculated after the begin position has
+			 * been determined, in order to ensure m_pts_length will be corrected.
+			 */
+			 m_end_valid = 0;
+			 
+		}
 	}
 }
 
@@ -472,14 +542,15 @@ void eDVBTSTools::calcEnd()
 	}
 	
 	int maxiter = 10;
-	
-	m_offset_end = m_last_filelength;
 
 	if (!m_end_valid)
 	{
-		if (m_streaminfo.getLastFrame(m_offset_end, m_pts_end) == 0)
+		off_t offset = m_offset_end = m_last_filelength;
+		pts_t pts = m_pts_end;
+		if (m_streaminfo.getLastFrame(offset, pts) == 0)
 		{
-			m_pts_length = m_pts_end;
+			m_offset_end = offset;
+			m_pts_length = m_pts_end = pts;
 			end = m_offset_end;
 			if (m_streaminfo.fixupPTS(end, m_pts_length) != 0)
 			{
@@ -503,16 +574,15 @@ void eDVBTSTools::calcEnd()
 				if (m_offset_end < 0)
 					m_offset_end = 0;
 
-					/* restore offset if getpts fails */
-				off_t off = m_offset_end;
-
-				if (!getPTS(m_offset_end, m_pts_end))
+				offset = m_offset_end;
+				pts = m_pts_end;
+				if (!getPTS(offset, pts))
 				{
+					offset = m_offset_end;
+					m_pts_end = pts;
 					m_pts_length = pts_diff(m_pts_begin, m_pts_end);
 					m_end_valid = 1;
 				}
-				else
-					m_offset_end = off;
 
 				if (!m_offset_end)
 				{
@@ -626,8 +696,13 @@ int eDVBTSTools::takeSample(off_t off, pts_t &p)
 	return -1;
 }
 
-int eDVBTSTools::findPMT(int *pmt_pid, int *service_id, int* pcr_pid)
+int eDVBTSTools::findPMT(eDVBPMTParser::program &program)
 {
+	int pmtpid = -1;
+	ePtr<iDVBSectionReader> sectionreader;
+
+	eDVBPMTParser::clearProgramInfo(program);
+
 		/* FIXME: this will be factored out soon! */
 	if (!m_source || !m_source->valid())
 	{
@@ -636,6 +711,7 @@ int eDVBTSTools::findPMT(int *pmt_pid, int *service_id, int* pcr_pid)
 	}
 
 	off_t position=0;
+	m_pmtready = false;
 
 	for (int attempts_left = (5*1024*1024)/188; attempts_left != 0; --attempts_left)
 	{
@@ -661,7 +737,7 @@ int eDVBTSTools::findPMT(int *pmt_pid, int *service_id, int* pcr_pid)
 			continue;
 		}
 		
-		if (!(packet[1] & 0x40)) /* pusi */
+		if (pmtpid < 0 && !(packet[1] & 0x40)) /* pusi */
 			continue;
 		
 			/* ok, now we have a PES header or section header*/
@@ -675,22 +751,31 @@ int eDVBTSTools::findPMT(int *pmt_pid, int *service_id, int* pcr_pid)
 			sec = packet + packet[4] + 4 + 1;
 		} else
 			sec = packet + 4;
-		
-		if (sec[0])	/* table pointer, assumed to be 0 */
-			continue;
 
-		if (sec[1] == 0x02) /* program map section */
+		if (pmtpid < 0)
 		{
-			if (pmt_pid)
-				*pmt_pid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
-			if (service_id)
-				*service_id = (sec[4] << 8) | sec[5];
-			if (pcr_pid)
-				*pcr_pid = ((sec[9] << 8) | sec[10]) & 0x1FFF; /* 13-bits */
+			if (sec[0]) /* table pointer, assumed to be 0 */
+				continue;
+			if (sec[1] == 0x02) /* program map section */
+			{
+				pmtpid = ((packet[1] << 8) | packet[2]) & 0x1FFF;
+				int sid = (sec[4] << 8) | sec[5];
+				sectionreader = new eTSFileSectionReader(eApp);
+				m_PMT.begin(eApp, eDVBPMTSpec(pmtpid, sid), sectionreader);
+				((eTSFileSectionReader*)(iDVBSectionReader*)sectionreader)->data(&sec[1], 188 - (sec + 1 - packet));
+			}
+		}
+		else if (pmtpid == (((packet[1] << 8) | packet[2]) & 0x1FFF))
+		{
+			((eTSFileSectionReader*)(iDVBSectionReader*)sectionreader)->data(sec, 188 - (sec - packet));
+		}
+		if (m_pmtready)
+		{
+			program = m_program;
 			return 0;
 		}
 	}
-	
+	m_PMT.stop();
 	return -1;
 }
 
@@ -778,6 +863,9 @@ int eDVBTSTools::findFrame(off_t &_offset, size_t &len, int &direction, int fram
 		}
 	}
 
+	/* make sure we've ended up in the right direction, ignore the result if we didn't */
+	if ((direction >= 0 && start < _offset) || (direction < 0 && start > _offset)) return -1;
+
 	len = offset - start;
 	_offset = start;
 	if (direction < 0)
@@ -840,4 +928,16 @@ int eDVBTSTools::findNextPicture(off_t &offset, size_t &len, int &distance, int 
 //	eDebug("in total, we moved %d frames", nr_frames);
 
 	return 0;
+}
+
+void eDVBTSTools::PMTready(int error)
+{
+	if (!error)
+	{
+		if (getProgramInfo(m_program) >= 0)
+		{
+			m_PMT.stop();
+			m_pmtready = true;
+		}
+	}
 }

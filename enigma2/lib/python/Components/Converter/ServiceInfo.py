@@ -2,6 +2,8 @@ from Components.Converter.Converter import Converter
 from enigma import iServiceInformation, iPlayableService
 from Components.Element import cached
 
+WIDESCREEN = [3, 4, 7, 8, 0xB, 0xC, 0xF, 0x10]
+
 class ServiceInfo(Converter, object):
 	HAS_TELETEXT = 0
 	IS_MULTICHANNEL = 1
@@ -23,6 +25,7 @@ class ServiceInfo(Converter, object):
 	HAS_HBBTV = 17
 	AUDIOTRACKS_AVAILABLE = 18
 	SUBTITLES_AVAILABLE = 19
+	EDITMODE = 20
 
 	def __init__(self, type):
 		Converter.__init__(self, type)
@@ -47,6 +50,7 @@ class ServiceInfo(Converter, object):
 				"HasHBBTV": (self.HAS_HBBTV, (iPlayableService.evUpdatedInfo,iPlayableService.evHBBTVInfo,)),
 				"AudioTracksAvailable": (self.AUDIOTRACKS_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
 				"SubtitlesAvailable": (self.SUBTITLES_AVAILABLE, (iPlayableService.evUpdatedInfo,)),
+				"Editmode": (self.EDITMODE, (iPlayableService.evUpdatedInfo,)),
 			}[type]
 
 	def getServiceInfoString(self, info, what, convert = lambda x: "%d" % x):
@@ -83,7 +87,7 @@ class ServiceInfo(Converter, object):
 		elif self.type == self.IS_CRYPTED:
 			return info.getInfo(iServiceInformation.sIsCrypted) == 1
 		elif self.type == self.IS_WIDESCREEN:
-			return info.getInfo(iServiceInformation.sAspect) in (3, 4, 7, 8, 0xB, 0xC, 0xF, 0x10)
+			return info.getInfo(iServiceInformation.sAspect) in WIDESCREEN
 		elif self.type == self.SUBSERVICES_AVAILABLE:
 			subservices = service.subServices()
 			return subservices and subservices.getNumberOfSubservices() > 0
@@ -98,6 +102,9 @@ class ServiceInfo(Converter, object):
 			if subtitlelist:
 				return len(subtitlelist) > 0
 			return False
+		elif self.type == self.EDITMODE:
+			return hasattr(self.source, "editmode") and not not self.source.editmode
+		return False
 
 	boolean = property(getBoolean)
 	

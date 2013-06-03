@@ -149,10 +149,6 @@ private:
 	static void *threadproc(void *arg);
 	void *vtunerPump();
 
-	int select(int maxfd, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
-	ssize_t writeAll(int fd, const void *buf, size_t count);
-	ssize_t read(int fd, void *buf, size_t count);
-
 public:
 	eDVBUsbAdapter(int nr);
 	~eDVBUsbAdapter();
@@ -302,7 +298,7 @@ public:
 
 	int getUseCount() { return m_use_count; }
 
-	RESULT requestTsidOnid(ePyObject callback);
+	RESULT requestTsidOnid();
 	int reserveDemux();
 private:
 	ePtr<eDVBAllocatedFrontend> m_frontend;
@@ -348,7 +344,6 @@ private:
 	void ReleaseUse();
 
 		/* for tsid/onid read */
-	ePyObject m_tsid_onid_callback;
 	ePtr<iDVBDemux> m_tsid_onid_demux;
 	ePtr<eTable<ServiceDescriptionSection> > m_SDT;
 	void SDTready(int err);

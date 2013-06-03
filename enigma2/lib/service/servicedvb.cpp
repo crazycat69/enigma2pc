@@ -39,7 +39,7 @@ public:
 	RESULT getName(const eServiceReference &ref, std::string &name);
 	int getLength(const eServiceReference &ref);
 	int isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate);
-	PyObject *getInfoObject(const eServiceReference &ref, int);
+	ePtr<iDVBTransponderData> getTransponderData(const eServiceReference &ref);
 };
 
 DEFINE_REF(eStaticServiceDVBInformation);
@@ -98,61 +98,66 @@ int eStaticServiceDVBInformation::isPlayable(const eServiceReference &ref, const
 	return 0;
 }
 
-PyObject *eStaticServiceDVBInformation::getInfoObject(const eServiceReference &r, int what)
+ePtr<iDVBTransponderData> eStaticServiceDVBInformation::getTransponderData(const eServiceReference &r)
 {
+	ePtr<iDVBTransponderData> retval;
 	if (r.type == eServiceReference::idDVB)
 	{
 		const eServiceReferenceDVB &ref = (const eServiceReferenceDVB&)r;
-		switch(what)
+		ePtr<eDVBResourceManager> res;
+		if (!eDVBResourceManager::getInstance(res))
 		{
-			case iServiceInformation::sTransponderData:
+			ePtr<iDVBChannelList> db;
+			if (!res->getChannelList(db))
 			{
-				ePtr<eDVBResourceManager> res;
-				if (!eDVBResourceManager::getInstance(res))
+				eDVBChannelID chid;
+				ref.getChannelID(chid);
+				ePtr<iDVBFrontendParameters> feparm;
+				if (!db->getChannelFrontendData(chid, feparm))
 				{
-					ePtr<iDVBChannelList> db;
-					if (!res->getChannelList(db))
+					int system;
+					if (!feparm->getSystem(system))
 					{
-						eDVBChannelID chid;
-						ref.getChannelID(chid);
-						ePtr<iDVBFrontendParameters> feparm;
-						if (!db->getChannelFrontendData(chid, feparm))
+						switch (system)
 						{
-							int system;
-							if (!feparm->getSystem(system))
+							case iDVBFrontend::feSatellite:
 							{
-								ePyObject dict = PyDict_New();
-								switch (system)
-								{
-									case iDVBFrontend::feSatellite:
-									{
-										PutSatelliteDataToDict(dict, feparm);
-										break;
-									}
-									case iDVBFrontend::feTerrestrial:
-									{
-										PutTerrestrialDataToDict(dict, feparm);
-										break;
-									}
-									case iDVBFrontend::feCable:
-									{
-										PutCableDataToDict(dict, feparm);
-										break;
-									}
-									default:
-										eDebug("unknown frontend type %d", system);
-										Py_DECREF(dict);
-										break;
-								}
-								return dict;
+								eDVBFrontendParametersSatellite s;
+								feparm->getDVBS(s);
+								retval = new eDVBSatelliteTransponderData(NULL, 0, s, 0, true);
+								break;
 							}
+							case iDVBFrontend::feTerrestrial:
+							{
+								eDVBFrontendParametersTerrestrial t;
+								feparm->getDVBT(t);
+								retval = new eDVBTerrestrialTransponderData(NULL, 0, t, true);
+								break;
+							}
+							case iDVBFrontend::feCable:
+							{
+								eDVBFrontendParametersCable c;
+								feparm->getDVBC(c);
+								retval = new eDVBCableTransponderData(NULL, 0, c, true);
+								break;
+							}
+							case iDVBFrontend::feATSC:
+							{
+								eDVBFrontendParametersATSC a;
+								feparm->getATSC(a);
+								retval = new eDVBATSCTransponderData(NULL, 0, a, true);
+								break;
+							}
+							default:
+								eDebug("unknown frontend type %d", system);
+								break;
 						}
 					}
 				}
 			}
 		}
 	}
-	Py_RETURN_NONE;
+	return retval;
 }
 
 DEFINE_REF(eStaticServiceDVBBouquetInformation);
@@ -299,7 +304,8 @@ public:
 	int isPlayable(const eServiceReference &ref, const eServiceReference &ignore, bool simulate) { return 1; }
 	int getInfo(const eServiceReference &ref, int w);
 	std::string getInfoString(const eServiceReference &ref,int w);
-	PyObject *getInfoObject(const eServiceReference &r, int what);
+	ePtr<iDVBTransponderData> getTransponderData(const eServiceReference &r);
+	long long getFileSize(const eServiceReference &r);
 };
 
 DEFINE_REF(eStaticServiceDVBPVRInformation);
@@ -429,15 +435,15 @@ std::string eStaticServiceDVBPVRInformation::getInfoString(const eServiceReferen
 	}
 }
 
-PyObject *eStaticServiceDVBPVRInformation::getInfoObject(const eServiceReference &r, int what)
+ePtr<iDVBTransponderData> eStaticServiceDVBPVRInformation::getTransponderData(const eServiceReference &r)
 {
-	switch (what)
-	{
-	case iServiceInformation::sFileSize:
-		return PyLong_FromLongLong(m_parser.m_filesize);
-	default:
-		Py_RETURN_NONE;
-	}
+	ePtr<iDVBTransponderData> retval;
+	return retval;
+}
+
+long long eStaticServiceDVBPVRInformation::getFileSize(const eServiceReference &ref)
+{
+	return m_parser.m_filesize;
 }
 
 RESULT eStaticServiceDVBPVRInformation::getEvent(const eServiceReference &ref, ePtr<eServiceEvent> &evt, time_t start_time)
@@ -553,17 +559,31 @@ static int reindex_work(const std::string& filename)
 	eMPEGStreamParserTS parser; /* Missing packetsize, should be determined from stream? */
 
 	{
+		unsigned int i;
+		bool timingpidset = false;
 		eDVBTSTools tstools;
 		tstools.openFile(filename.c_str(), 1);
-		int pcr_pid;
-		err = tstools.findPMT(NULL, NULL, &pcr_pid);
+		eDVBPMTParser::program program;
+		err = tstools.findPMT(program);
 		if (err)
 		{
 			eDebug("reindex - Failed to find PMT");
 			return err;
 		}
-		eDebug("reindex: pcr_pid=0x%x", pcr_pid);
-		parser.setPid(pcr_pid, -1); /* -1 = automatic MPEG2/h264 detection */
+		for (i = 0; i < program.videoStreams.size(); i++)
+		{
+			if (timingpidset) break;
+			eDebug("reindex: video pid=0x%x", program.videoStreams[i].pid);
+			parser.setPid(program.videoStreams[i].pid, iDVBTSRecorder::video_pid, program.videoStreams[i].type);
+			timingpidset = true;
+		}
+		for (i = 0; i < program.audioStreams.size(); i++)
+		{
+			if (timingpidset) break;
+			eDebug("reindex: audio pid=0x%x", program.audioStreams[i].pid);
+			parser.setPid(program.audioStreams[i].pid, iDVBTSRecorder::audio_pid, program.audioStreams[i].type);
+			timingpidset = true;
+		}
 	}
 
 	parser.startSave(filename);
@@ -996,6 +1016,7 @@ eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *serv
 	m_timeshift_enabled(0),
 	m_timeshift_active(0),
 	m_timeshift_changed(0),
+	m_save_timeshift(0),
 	m_timeshift_fd(-1),
 	m_skipmode(0),
 	m_fastforward(0),
@@ -1121,10 +1142,8 @@ void eDVBServicePlay::serviceEvent(int event)
 		/* fill now/next with info from the epg cache, will be replaced by EIT when it arrives */
 		updateEpgCacheNowNext();
 
-		std::string show_eit_nownext;
 		/* default behaviour is to start an eit reader, and wait for now/next info, unless this is disabled */
-		if (ePythonConfigQuery::getConfigValue("config.usage.show_eit_nownext", show_eit_nownext) < 0
-			|| show_eit_nownext != "False")
+		if (eConfigManager::getConfigBoolValue("config.usage.show_eit_nownext", true))
 		{
 			ePtr<iDVBDemux> m_demux;
 			if (!m_service_handler.getDataDemux(m_demux))
@@ -1461,13 +1480,16 @@ RESULT eDVBServicePlay::pause(ePtr<iPauseableService> &ptr)
 
 RESULT eDVBServicePlay::setSlowMotion(int ratio)
 {
+	int ret = 0;
 	ASSERT(ratio); /* The API changed: instead of calling setSlowMotion(0), call play! */
 	eDebug("eDVBServicePlay::setSlowMotion(%d)", ratio);
 	setFastForward_internal(0);
 	if (m_decoder)
 	{
-		m_slowmotion = ratio;
-		return m_decoder->setSlowMotion(ratio);
+		ret = m_decoder->setSlowMotion(ratio);
+		if (!ret)
+			m_slowmotion = ratio;
+		return ret;
 	}
 	else
 		return -1;
@@ -1710,14 +1732,14 @@ RESULT eDVBServicePlay::subServices(ePtr<iSubserviceList> &ptr)
 RESULT eDVBServicePlay::timeshift(ePtr<iTimeshiftService> &ptr)
 {
 	ptr = 0;
-	if (m_have_video_pid &&  // HACK !!! FIXMEE !! temporary no timeshift on radio services !!
-		(m_timeshift_enabled || !m_is_pvr))
+	if (m_timeshift_enabled || !m_is_pvr)
 	{
 		if (!m_timeshift_enabled)
 		{
 			/* query config path */
-			std::string tspath;
-			if(ePythonConfigQuery::getConfigValue("config.usage.timeshift_path", tspath) == -1){
+			std::string tspath = eConfigManager::getConfigValue("config.usage.timeshift_path");
+			if(tspath == "")
+			{
 				eDebug("could not query ts path from config");
 				return -4;
 			}
@@ -1835,13 +1857,14 @@ int eDVBServicePlay::getInfo(int w)
 		return xineLib->getVideoWidth();
 		break;
 	case sFrameRate:
-		//if (m_decoder) // openpliPC
-		//	return m_decoder->getVideoFrameRate();
+//		if (m_decoder) // openpliPC
+//			return m_decoder->getVideoFrameRate();
 		return xineLib->getVideoFrameRate();
 		break;
 	case sProgressive:
-		if (m_decoder)
-			return m_decoder->getVideoProgressive();
+//		if (m_decoder)
+//			return m_decoder->getVideoProgressive();
+		return xineLib->getProgressive();
 		break;
 	case sAspect:
 	{
@@ -1966,20 +1989,14 @@ std::string eDVBServicePlay::getInfoString(int w)
 	return iServiceInformation::getInfoString(w);
 }
 
-PyObject *eDVBServicePlay::getInfoObject(int w)
+ePtr<iDVBTransponderData> eDVBServicePlay::getTransponderData()
 {
-	switch (w)
-	{
-	case sCAIDs:
-		return m_service_handler.getCaIds();
-	case sCAIDPIDs:
-		return m_service_handler.getCaIds(true);
-	case sTransponderData:
-		return eStaticServiceDVBInformation().getInfoObject(m_reference, w);
-	default:
-		break;
-	}
-	return iServiceInformation::getInfoObject(w);
+	return eStaticServiceDVBInformation().getTransponderData(m_reference);
+}
+
+void eDVBServicePlay::getCaIds(std::vector<int> &caids, std::vector<int> &ecmpids)
+{
+	m_service_handler.getCaIds(caids, ecmpids);
 }
 
 int eDVBServicePlay::getNumberOfTracks()
@@ -2273,75 +2290,41 @@ int eDVBServiceBase::getFrontendInfo(int w)
 	return fe->readFrontendData(w);
 }
 
-PyObject *eDVBServiceBase::getFrontendData()
+ePtr<iDVBFrontendData> eDVBServiceBase::getFrontendData()
 {
-	ePyObject ret = PyDict_New();
-	if (ret)
+	ePtr<iDVBFrontendData> ret;
+	eUsePtr<iDVBChannel> channel;
+	if(!m_service_handler.getChannel(channel))
 	{
-		eUsePtr<iDVBChannel> channel;
-		if(!m_service_handler.getChannel(channel))
-		{
-			ePtr<iDVBFrontend> fe;
-			if(!channel->getFrontend(fe))
-				fe->getFrontendData(ret);
-		}
+		ePtr<iDVBFrontend> fe;
+		if(!channel->getFrontend(fe))
+			fe->getFrontendData(ret);
 	}
-	else
-		Py_RETURN_NONE;
 	return ret;
 }
 
-PyObject *eDVBServiceBase::getFrontendStatus()
+ePtr<iDVBFrontendStatus> eDVBServiceBase::getFrontendStatus()
 {
-	ePyObject ret = PyDict_New();
-	if (ret)
+	ePtr<iDVBFrontendStatus> ret;
+	eUsePtr<iDVBChannel> channel;
+	if(!m_service_handler.getChannel(channel))
 	{
-		eUsePtr<iDVBChannel> channel;
-		if(!m_service_handler.getChannel(channel))
-		{
-			ePtr<iDVBFrontend> fe;
-			if(!channel->getFrontend(fe))
-				fe->getFrontendStatus(ret);
-		}
+		ePtr<iDVBFrontend> fe;
+		if(!channel->getFrontend(fe))
+			fe->getFrontendStatus(ret);
 	}
-	else
-		Py_RETURN_NONE;
 	return ret;
 }
 
-PyObject *eDVBServiceBase::getTransponderData(bool original)
+ePtr<iDVBTransponderData> eDVBServiceBase::getTransponderData(bool original)
 {
-	ePyObject ret = PyDict_New();
-	if (ret)
+	ePtr<iDVBTransponderData> ret;
+	eUsePtr<iDVBChannel> channel;
+	if(!m_service_handler.getChannel(channel))
 	{
-		eUsePtr<iDVBChannel> channel;
-		if(!m_service_handler.getChannel(channel))
-		{
-			ePtr<iDVBFrontend> fe;
-			if(!channel->getFrontend(fe))
-				fe->getTransponderData(ret, original);
-		}
-	}
-	else
-		Py_RETURN_NONE;
-	return ret;
-}
-
-PyObject *eDVBServiceBase::getAll(bool original)
-{
-	ePyObject ret = getTransponderData(original);
-	if (ret != Py_None)
-	{
-		eUsePtr<iDVBChannel> channel;
-		if(!m_service_handler.getChannel(channel))
-		{
-			ePtr<iDVBFrontend> fe;
-			if(!channel->getFrontend(fe))
-			{
-				fe->getFrontendData(ret);
-				fe->getFrontendStatus(ret);
-			}
-		}
+		ePtr<iDVBFrontend> fe;
+		if(!channel->getFrontend(fe))
+			fe->getTransponderData(ret, original);
 	}
 	return ret;
 }
@@ -2383,8 +2366,8 @@ RESULT eDVBServicePlay::startTimeshift()
 	if (!m_record)
 		return -3;
 
-	std::string tspath;
-	if(ePythonConfigQuery::getConfigValue("config.usage.timeshift_path", tspath) == -1)
+	std::string tspath = eConfigManager::getConfigValue("config.usage.timeshift_path");
+	if (tspath == "")
 	{
 		eDebug("could not query ts path");
 		return -5;
@@ -2442,15 +2425,39 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		close(m_timeshift_fd);
 		m_timeshift_fd = -1;
 	}
-	eDebug("remove timeshift files");
-	eBackgroundFileEraser::getInstance()->erase(m_timeshift_file);
-	eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".sc");
+
+	if (!m_save_timeshift)
+	{
+		eDebug("remove timeshift files");
+		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file);
+		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".sc");
+	}
+	else
+	{
+		eDebug("timeshift files not deleted");
+		m_save_timeshift = 0;
+	}
 	return 0;
 }
 
 int eDVBServicePlay::isTimeshiftActive()
 {
 	return m_timeshift_enabled && m_timeshift_active;
+}
+
+int eDVBServicePlay::isTimeshiftEnabled()
+{
+        return m_timeshift_enabled;
+}
+
+RESULT eDVBServicePlay::saveTimeshiftFile()
+{
+	if (!m_timeshift_enabled)
+                return -1;
+
+	m_save_timeshift = 1;
+
+	return 0;
 }
 
 RESULT eDVBServicePlay::activateTimeshift()
@@ -2465,6 +2472,14 @@ RESULT eDVBServicePlay::activateTimeshift()
 	}
 
 	return -2;
+}
+
+std::string eDVBServicePlay::getTimeshiftFilename()
+{
+	if (m_timeshift_enabled)
+		return m_timeshift_file;
+	else
+		return "";
 }
 
 PyObject *eDVBServicePlay::getCutList()
@@ -2540,8 +2555,9 @@ void eDVBServicePlay::updateTimeshiftPids()
 		return;
 	else
 	{
-//		int timing_pid = -1;
-//		int timing_pid_type = -1;
+		int timing_pid = -1;
+		int timing_stream_type = -1;
+		iDVBTSRecorder::timing_pid_type timing_pid_type = iDVBTSRecorder::none;
 		std::set<int> pids_to_record;
 		pids_to_record.insert(0); // PAT
 		if (program.pmtPid != -1)
@@ -2553,26 +2569,28 @@ void eDVBServicePlay::updateTimeshiftPids()
 		for (std::vector<eDVBServicePMTHandler::videoStream>::const_iterator
 			i(program.videoStreams.begin());
 			i != program.videoStreams.end(); ++i)
-/*		{
+		{
 			if (timing_pid == -1)
 			{
 				timing_pid = i->pid;
-				timing_pid_type = i->type;
-			} */
+				timing_stream_type = i->type;
+				timing_pid_type = iDVBTSRecorder::video_pid;
+			}
 			pids_to_record.insert(i->pid);
-//		}
+		}
 
 		for (std::vector<eDVBServicePMTHandler::audioStream>::const_iterator
 			i(program.audioStreams.begin());
 			i != program.audioStreams.end(); ++i)
-/*		{
+		{
 			if (timing_pid == -1)
 			{
 				timing_pid = i->pid;
-				timing_pid_type = i->type;
-			} */
+				timing_stream_type = i->type;
+				timing_pid_type = iDVBTSRecorder::audio_pid;
+			}
 			pids_to_record.insert(i->pid);
-//		}
+		}
 
 		for (std::vector<eDVBServicePMTHandler::subtitleStream>::const_iterator
 			i(program.subtitleStreams.begin());
@@ -2591,7 +2609,7 @@ void eDVBServicePlay::updateTimeshiftPids()
 				std::inserter(new_pids, new_pids.begin())
 				);
 		/* openpliPC changed*/
-/*		for (std::set<int>::iterator i(new_pids.begin()); i != new_pids.end(); ++i)
+		for (std::set<int>::iterator i(new_pids.begin()); i != new_pids.end(); ++i)
     {
 			if (m_record)
 				m_record->addPID(*i);
@@ -2606,9 +2624,9 @@ void eDVBServicePlay::updateTimeshiftPids()
 			if (m_openpliPC_record)
 				m_openpliPC_record->removePID(*i);
     }
-*/
+
 		/* old Enigm2PC changed*/
-		if (m_record) {
+/*		if (m_record) {
 			for (std::set<int>::iterator i(new_pids.begin()); i != new_pids.end(); ++i)
 				m_record->addPID(*i);
 			for (std::set<int>::iterator i(obsolete_pids.begin()); i != obsolete_pids.end(); ++i)
@@ -2621,16 +2639,17 @@ void eDVBServicePlay::updateTimeshiftPids()
 			for (std::set<int>::iterator i(obsolete_pids.begin()); i != obsolete_pids.end(); ++i)
 				m_openpliPC_record->removePID(*i);
 		}
+*/
 
 /* old Enigma2PC it remove*/
 
-/*		if (timing_pid != -1)
-    {
+		if (timing_pid != -1)
+		{
 			if (m_record)
-				m_record->setTimingPID(timing_pid, timing_pid_type);
+				m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
 			if (m_openpliPC_record)
-				m_openpliPC_record->setTimingPID(timing_pid, timing_pid_type);
-    } */
+				m_openpliPC_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
+		}
 	}
 }
 
@@ -2712,7 +2731,14 @@ void eDVBServicePlay::resetTimeshift(int start)
 
 ePtr<iTsSource> eDVBServicePlay::createTsSource(eServiceReferenceDVB &ref, int packetsize)
 {
-	if (m_is_stream)
+	/*
+	 * NOTE: we cannot use our m_is_stream status, instead we check the reference again.
+	 * It could be that createTsSource is called to start a timeshift on a stream,
+	 * in which case the ref passed here no longer is a url, but a timeshift file instead.
+	 * (but m_is_stream would still be set, because of the ref which was passed to our
+	 * constructor)
+	 */
+	if (ref.path.substr(0, 7) == "http://")
 	{
 		eHttpStream *f = new eHttpStream();
 		f->open(ref.path.c_str());
@@ -2891,12 +2917,12 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 		else
 		{
 			std::string value;
-			bool showRadioBackground = (ePythonConfigQuery::getConfigValue("config.misc.showradiopic", value) < 0 || value == "True");
+			bool showRadioBackground = eConfigManager::getConfigBoolValue("config.misc.showradiopic", true);
 			std::string radio_pic;
 			if (showRadioBackground)
-				ePythonConfigQuery::getConfigValue("config.misc.radiopic", radio_pic);
+				radio_pic = eConfigManager::getConfigValue("config.misc.radiopic");
 			else
-				ePythonConfigQuery::getConfigValue("config.misc.blackradiopic", radio_pic);
+				radio_pic = eConfigManager::getConfigValue("config.misc.blackradiopic");
 			m_decoder->setRadioPic(radio_pic);
 		}
 
@@ -3210,11 +3236,7 @@ PyObject *eDVBServicePlay::getCachedSubtitle()
 		eDVBServicePMTHandler &h = m_timeshift_active ? m_service_handler_timeshift : m_service_handler;
 		if (!h.getProgramInfo(program))
 		{
-			bool usecache=false;
-			std::string configvalue;
-			if (!ePythonConfigQuery::getConfigValue("config.autolanguage.subtitle_usecache", configvalue))
-				usecache = configvalue == "True";
-
+			bool usecache = eConfigManager::getConfigBoolValue("config.autolanguage.subtitle_usecache");
 			int stream=program.defaultSubtitleStream;
 			int tmp = m_dvb_service->getCacheEntry(eDVBService::cSUBTITLE);
 
@@ -3354,18 +3376,12 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		//if (m_decoder) // openpliPC
 		//	m_decoder->getPTS(0, pos);
 		xineLib->getPTS(pos);
+		int subtitledelay = 0;
 //		eDebug("got new subtitle page %lld %lld %d", pos, page.m_pts, page.m_have_pts);
 		if ( !page.m_have_pts && (m_is_pvr || m_timeshift_enabled))
 		{
 			eDebug("Subtitle without PTS and recording");
-
-			std::string configvalue;
-			int subtitledelay = 315000;
-			if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_noPTSrecordingdelay", configvalue))
-			{
-				subtitledelay = atoi(configvalue.c_str());
-			}
-
+			subtitledelay = eConfigManager::getConfigIntValue("config.subtitles.subtitle_noPTSrecordingdelay", 315000);
 			eDVBTeletextSubtitlePage tmppage;
 			tmppage = page;
 			tmppage.m_have_pts = true;
@@ -3374,12 +3390,7 @@ void eDVBServicePlay::newSubtitlePage(const eDVBTeletextSubtitlePage &page)
 		}
 		else
 		{
-			int subtitledelay = 0;
-			std::string configvalue;
-			if(!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_bad_timing_delay", configvalue))
-			{
-				subtitledelay = atoi(configvalue.c_str());
-			}
+			subtitledelay = eConfigManager::getConfigIntValue("config.subtitles.subtitle_bad_timing_delay", 0);
 			if (subtitledelay != 0)
 			{
 				eDVBTeletextSubtitlePage tmppage;
@@ -3464,13 +3475,7 @@ void eDVBServicePlay::newDVBSubtitlePage(const eDVBSubtitlePage &p)
 		if ( abs(pos-p.m_show_time)>1800000 && (m_is_pvr || m_timeshift_enabled))
 		{
 			eDebug("Subtitle without PTS and recording");
-
-			std::string configvalue;
-			int subtitledelay = 315000;
-			if (!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_noPTSrecordingdelay", configvalue))
-			{
-				subtitledelay = atoi(configvalue.c_str());
-			}
+			int subtitledelay = eConfigManager::getConfigIntValue("config.subtitles.subtitle_noPTSrecordingdelay", 315000);
 
 			eDVBSubtitlePage tmppage;
 			tmppage = p;
@@ -3479,12 +3484,7 @@ void eDVBServicePlay::newDVBSubtitlePage(const eDVBSubtitlePage &p)
 		}
 		else
 		{
-			int subtitledelay = 0;
-			std::string configvalue;
-			if(!ePythonConfigQuery::getConfigValue("config.subtitles.subtitle_bad_timing_delay", configvalue))
-			{
-				subtitledelay = atoi(configvalue.c_str());
-			}
+			int subtitledelay = eConfigManager::getConfigIntValue("config.subtitles.subtitle_bad_timing_delay", 0);
 			if (subtitledelay != 0)
 			{
 				eDVBSubtitlePage tmppage;
@@ -3523,12 +3523,9 @@ void eDVBServicePlay::setAC3Delay(int delay)
 {
 	if (m_dvb_service)
 		m_dvb_service->setCacheEntry(eDVBService::cAC3DELAY, delay ? delay : -1);
-	if (m_decoder) {
-		std::string config_delay;
-		int config_delay_int = 0;
-		if(ePythonConfigQuery::getConfigValue("config.av.generalAC3delay", config_delay) == 0)
-			config_delay_int = atoi(config_delay.c_str());
-		m_decoder->setAC3Delay(delay + config_delay_int);
+	if (m_decoder) 
+	{
+		m_decoder->setAC3Delay(delay + eConfigManager::getConfigIntValue("config.av.generalAC3delay"));
 	}
 }
 
@@ -3536,14 +3533,9 @@ void eDVBServicePlay::setPCMDelay(int delay)
 {
 	if (m_dvb_service)
 		m_dvb_service->setCacheEntry(eDVBService::cPCMDELAY, delay ? delay : -1);
-	if (m_decoder) {
-		std::string config_delay;
-		int config_delay_int = 0;
-		if(ePythonConfigQuery::getConfigValue("config.av.generalPCMdelay", config_delay) == 0)
-			config_delay_int = atoi(config_delay.c_str());
-		else
-			config_delay_int = 0;
-		m_decoder->setPCMDelay(delay + config_delay_int);
+	if (m_decoder) 
+	{
+		m_decoder->setPCMDelay(delay + eConfigManager::getConfigIntValue("config.av.generalPCMdelay"));
 	}
 }
 
@@ -3570,41 +3562,23 @@ RESULT eDVBServicePlay::stream(ePtr<iStreamableService> &ptr)
 	return 0;
 }
 
-PyObject *eDVBServicePlay::getStreamingData()
+ePtr<iStreamData> eDVBServicePlay::getStreamingData()
 {
+	ePtr<iStreamData> retval;
 	eDVBServicePMTHandler::program program;
-	if (m_service_handler.getProgramInfo(program))
+	if (!m_service_handler.getProgramInfo(program))
 	{
-		Py_RETURN_NONE;
+		retval = new eDVBServicePMTHandler::eStreamData(program);
 	}
-
-	ePyObject r = program.createPythonObject();
-	ePtr<iDVBDemux> demux;
-	if (!m_service_handler.getDataDemux(demux))
-	{
-		uint8_t demux_id, adapter_id;
-		if (!demux->getCADemuxID(demux_id))
-			PutToDict(r, "demux", demux_id);
-		if (!demux->getCAAdapterID(adapter_id))
-			PutToDict(r, "adapter", adapter_id);
-	}
-
-	return r;
+	return retval;
 }
 
 
 DEFINE_REF(eDVBServicePlay)
 
-PyObject *eDVBService::getInfoObject(const eServiceReference &ref, int w)
+ePtr<iDVBTransponderData> eDVBService::getTransponderData(const eServiceReference &ref)
 {
-	switch (w)
-	{
-	case iServiceInformation::sTransponderData:
-		return eStaticServiceDVBInformation().getInfoObject(ref, w);
-	default:
-		break;
-	}
-	return iStaticServiceInformation::getInfoObject(ref, w);
+	return eStaticServiceDVBInformation().getTransponderData(ref);
 }
 
 eAutoInitPtr<eServiceFactoryDVB> init_eServiceFactoryDVB(eAutoInitNumbers::service+1, "eServiceFactoryDVB");

@@ -210,9 +210,18 @@ int eStaticServiceMP3Info::getInfo(const eServiceReference &ref, int w)
 	case iServiceInformation::sTimeCreate:
 		{
 			struct stat s;
-			if(stat(ref.path.c_str(), &s) == 0)
+			if (stat(ref.path.c_str(), &s) == 0)
 			{
 				return s.st_mtime;
+			}
+		}
+		break;
+	case iServiceInformation::sFileSize:
+		{
+			struct stat s;
+			if (stat(ref.path.c_str(), &s) == 0)
+			{
+				return s.st_size;
 			}
 		}
 		break;
@@ -220,21 +229,14 @@ int eStaticServiceMP3Info::getInfo(const eServiceReference &ref, int w)
 	return iServiceInformation::resNA;
 }
 
-PyObject* eStaticServiceMP3Info::getInfoObject(const eServiceReference &ref, int w)
+long long eStaticServiceMP3Info::getFileSize(const eServiceReference &ref)
 {
-	switch(w)
+	struct stat s;
+	if (stat(ref.path.c_str(), &s) == 0)
 	{
-	case iServiceInformation::sFileSize:
-		{
-			struct stat s;
-			if(stat(ref.path.c_str(), &s) == 0)
-			{
-				return PyLong_FromLongLong(s.st_size);
-			}
-		}
-		break;
+		return s.st_size;
 	}
-	Py_RETURN_NONE;
+	return 0;
 }
 
 // eServiceMP3
@@ -333,12 +335,11 @@ eServiceMP3::eServiceMP3(eServiceReference ref)
 		CONNECT(m_streamingsrc_timeout->timeout, eServiceMP3::sourceTimeout);
 
 		std::string config_str;
-		if( ePythonConfigQuery::getConfigValue("config.mediaplayer.useAlternateUserAgent", config_str) == 0 )
+		if (eConfigManager::getConfigBoolValue("config.mediaplayer.useAlternateUserAgent"))
 		{
-			if ( config_str == "True" )
-				ePythonConfigQuery::getConfigValue("config.mediaplayer.alternateUserAgent", m_useragent);
+			m_useragent = eConfigManager::getConfigValue("config.mediaplayer.alternateUserAgent");
 		}
-		if ( m_useragent.length() == 0 )
+		if (m_useragent.empty())
 			m_useragent = "Enigma2 Mediaplayer";
 	}
 	else if ( m_sourceinfo.containertype == ctCDA )

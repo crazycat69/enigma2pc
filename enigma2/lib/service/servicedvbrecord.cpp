@@ -353,7 +353,8 @@ int eDVBServiceRecord::doRecord()
 			if (program.pmtPid != -1)
 				pids_to_record.insert(program.pmtPid); // PMT
 
-			int timing_pid = -1, timing_pid_type = -1;
+			int timing_pid = -1, timing_stream_type = -1;
+			iDVBTSRecorder::timing_pid_type timing_pid_type = iDVBTSRecorder::none;
 
 			eDebugNoNewLine("RECORD: have %zd video stream(s)", program.videoStreams.size());
 			if (!program.videoStreams.empty())
@@ -368,7 +369,8 @@ int eDVBServiceRecord::doRecord()
 					if (timing_pid == -1)
 					{
 						timing_pid = i->pid;
-						timing_pid_type = i->type;
+						timing_stream_type = i->type;
+						timing_pid_type = iDVBTSRecorder::video_pid;
 					}
 					
 					if (i != program.videoStreams.begin())
@@ -390,7 +392,8 @@ int eDVBServiceRecord::doRecord()
 					if (timing_pid == -1)
 					{
 						timing_pid = i->pid;
-						timing_pid_type = -1;
+						timing_stream_type = i->type;
+						timing_pid_type = iDVBTSRecorder::audio_pid;
 					}
 				
 					if (i != program.audioStreams.begin())
@@ -456,7 +459,7 @@ int eDVBServiceRecord::doRecord()
 			}
 
 			if (timing_pid != -1)
-				m_record->setTimingPID(timing_pid, timing_pid_type);
+				m_record->setTimingPID(timing_pid, timing_pid_type, timing_stream_type);
 
 			m_pids_active = pids_to_record;
 
@@ -490,28 +493,16 @@ RESULT eDVBServiceRecord::stream(ePtr<iStreamableService> &ptr)
 	return 0;
 }
 
-extern void PutToDict(ePyObject &dict, const char*key, long val);  // defined in dvb/frontend.cpp
-
-PyObject *eDVBServiceRecord::getStreamingData()
+ePtr<iStreamData> eDVBServiceRecord::getStreamingData()
 {
+	ePtr<iStreamData> retval;
 	eDVBServicePMTHandler::program program;
-	if (!m_tuned || m_service_handler.getProgramInfo(program))
+	if (m_tuned && !m_service_handler.getProgramInfo(program))
 	{
-		Py_RETURN_NONE;
+		retval = new eDVBServicePMTHandler::eStreamData(program);
 	}
 
-	ePyObject r = program.createPythonObject();
-	ePtr<iDVBDemux> demux;
-	if (!m_service_handler.getDataDemux(demux))
-	{
-		uint8_t demux_id, adapter_id;
-		if (!demux->getCADemuxID(demux_id))
-			PutToDict(r, "demux", demux_id);
-		if (!demux->getCAAdapterID(adapter_id))
-			PutToDict(r, "adapter", adapter_id);
-	}
-
-	return r;
+	return retval;
 }
 
 void eDVBServiceRecord::recordEvent(int event)

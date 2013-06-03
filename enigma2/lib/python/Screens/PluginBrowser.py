@@ -49,8 +49,8 @@ class PluginBrowser(Screen):
 
 		self.firsttime = True
 
-		self["red"] = Label(_("Remove plugins"))
-		self["green"] = Label(_("Download plugins"))
+		self["key_red"] = self["red"] = Label(_("Remove plugins"))
+		self["key_green"] = self["green"] = Label(_("Download plugins"))
 		
 		self.list = []
 		self["list"] = PluginList(self.list)
@@ -337,10 +337,11 @@ class PluginDownloadBrowser(Screen):
 			self.startIpkgListAvailable()
 		else:
 			if len(self.pluginlist) > 0:
+				pluginlist.sort()
 				self.updateList()
 				self["list"].instance.show()
 			else:
-				self["text"].setText("No new plugins found")
+				self["text"].setText(_("No new plugins found"))
 
 	def dataAvail(self, str):
 		#prepend any remaining data from the previous call

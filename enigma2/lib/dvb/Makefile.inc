@@ -14,6 +14,7 @@ dvb_libenigma_dvb_a_SOURCES = \
 	dvb/esection.cpp \
 	dvb/fastscan.cpp \
 	dvb/frontend.cpp \
+	dvb/frontendparms.cpp \
 	dvb/metaparser.cpp \
 	dvb/pesparse.cpp \
 	dvb/pmt.cpp \
@@ -27,6 +28,7 @@ dvb_libenigma_dvb_a_SOURCES = \
 	dvb/tstools.cpp \
 	dvb/volume.cpp \
 	dvb/streamserver.cpp \
+	dvb/pmtparse.cpp \
 	dvb/ca_connector.cpp \
 	dvb/decsa.cpp
 
@@ -64,5 +66,6 @@ dvbinclude_HEADERS = \
 	dvb/tstools.h \
 	dvb/volume.h \
 	dvb/streamserver.h \
+	dvb/pmtparse.h \
 	dvb/ca_connector.h \
 	dvb/decsa.h

@@ -10,6 +10,7 @@
 class eNavigation: public iObject, public Object
 {
 	DECLARE_REF(eNavigation);
+	int m_decoder;
 	ePtr<iServiceHandler> m_servicehandler;
 
 	ePtr<iPlayableService> m_runningService;
@@ -33,10 +34,10 @@ public:
 	
 	RESULT recordService(const eServiceReference &ref, ePtr<iRecordableService> &service, bool simulate=false);
 	RESULT stopRecordService(ePtr<iRecordableService> &service);
-	PyObject *getRecordings(bool simulate=false);
+	void getRecordings(std::vector<ePtr<iRecordableService> > &recordings, bool simulate=false);
 	
 	RESULT pause(int p);
-	eNavigation(iServiceHandler *serviceHandler);
+	eNavigation(iServiceHandler *serviceHandler, int decoder = 0);
 	virtual ~eNavigation();
 };
 

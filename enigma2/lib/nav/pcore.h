@@ -13,8 +13,8 @@ public:
 	PSignal1<void, int> m_event;
 	PSignal2<void, ePtr<iRecordableService>&, int> m_record_event;
 
-	pNavigation();
-	
+	pNavigation(int decoder = 0);
+
 	RESULT playService(const eServiceReference &service);
 	RESULT stopService();
 	RESULT pause(int p);
@@ -22,7 +22,7 @@ public:
 
 	SWIG_VOID(RESULT) recordService(const eServiceReference &ref, ePtr<iRecordableService> &SWIG_OUTPUT, bool simulate);
 	RESULT stopRecordService(ePtr<iRecordableService> &service);
-	PyObject *getRecordings(bool simulate=false);
+	void getRecordings(std::vector<ePtr<iRecordableService> > &recordings, bool simulate=false);
 
 private:
 	ePtr<eNavigation> m_core;

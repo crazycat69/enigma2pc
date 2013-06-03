@@ -5,13 +5,13 @@
 
 DEFINE_REF(pNavigation);
 
-pNavigation::pNavigation()
+pNavigation::pNavigation(int decoder)
 {
 	ePtr<iServiceHandler> service_center;
 	eServiceCenter::getInstance(service_center);
 
 	ASSERT(service_center);
-	m_core = new eNavigation(service_center);
+	m_core = new eNavigation(service_center, decoder);
 	
 	m_core->connectEvent(slot(*this, &pNavigation::navEvent), m_nav_event_connection);
 	m_core->connectRecordEvent(slot(*this, &pNavigation::navRecordEvent), m_nav_record_event_connection);
@@ -47,9 +47,9 @@ RESULT pNavigation::stopRecordService(ePtr<iRecordableService> &service)
 	return m_core->stopRecordService(service);
 }
 
-PyObject *pNavigation::getRecordings(bool simulate)
+void pNavigation::getRecordings(std::vector<ePtr<iRecordableService> > &recordings, bool simulate)
 {
-	return m_core->getRecordings(simulate);
+	m_core->getRecordings(recordings, simulate);
 }
 
 void pNavigation::navEvent(int event)

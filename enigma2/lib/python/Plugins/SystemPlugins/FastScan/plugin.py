@@ -67,7 +67,7 @@ class FastScan:
 		if result < 0:
 			self.text.setText(_('Scanning failed!'))
 		else:
-			self.text.setText(_('List version %d, found %d channels') % (self.scan.getVersion(), result))
+			self.text.setText(ngettext('List version %d, found %d channel', 'List version %d, found %d channels', result) % (self.scan.getVersion(), result))
 
 	def destroy(self):
 		pass
@@ -156,6 +156,7 @@ class FastScanScreen(ConfigListScreen, Screen):
 		self["actions"] = ActionMap(["SetupActions", "MenuActions"],
 		{
 			"ok": self.keyGo,
+			"save": self.keyGo,
 			"cancel": self.keyCancel,
 			"menu": self.closeRecursive,
 		}, -2)

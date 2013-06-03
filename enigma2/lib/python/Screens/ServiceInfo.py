@@ -85,10 +85,10 @@ class ServiceInfo(Screen):
 			self.feinfo = None
 		else:
 			self.type = TYPE_SERVICE_INFO
-			self["red"] = Label(_("Service"))
-			self["green"] = Label(_("PIDs"))
-			self["yellow"] = Label(_("Multiplex"))
-			self["blue"] = Label(_("Tuner status"))
+			self["key_red"] = self["red"] = Label(_("Service"))
+			self["key_green"] = self["green"] = Label(_("PIDs"))
+			self["key_yellow"] = self["yellow"] = Label(_("Multiplex"))
+			self["key_blue"] = self["blue"] = Label(_("Tuner status"))
 			service = session.nav.getCurrentService()
 			if service is not None:
 				self.info = service.info()
@@ -116,7 +116,7 @@ class ServiceInfo(Screen):
 			else:
 				aspect = "16:9"
 
-			videocodec =  ("MPEG2", "MPEG4", "MPEG1", "MPEG4-II", "VC1", "VC1-SM", "-" )[self.info and self.info.getInfo(iServiceInformation.sVideoType) or -1]			
+			videocodec = ("MPEG2", "MPEG4", "MPEG1", "MPEG4-II", "VC1", "VC1-SM", "-" )[self.info and self.info.getInfo(iServiceInformation.sVideoType) or -1]			
 
 			width = self.info and self.info.getInfo(iServiceInformation.sVideoWidth) or -1
 			height = self.info and self.info.getInfo(iServiceInformation.sVideoHeight) or -1
