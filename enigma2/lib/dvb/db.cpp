@@ -410,7 +410,9 @@ void eDVBDB::loadServicelist(const char *file)
 				sat.modulation = modulation;
 				sat.rolloff = rolloff;
 				sat.pilot = pilot;
-				sat.is_id = is_id != -1 ? ((pls_mode<<26) | (pls_code<<8) | (is_id&0xff)) : -1;
+				sat.is_id = is_id;
+				sat.pls_mode = pls_mode & 3;
+				sat.pls_code = pls_code & 0x3FFFF;
 				feparm->setDVBS(sat);
 				feparm->setFlags(flags);
 			} else if (line[1]=='t')
@@ -559,7 +561,7 @@ void eDVBDB::saveServicelist(const char *file)
 					sat.modulation,
 					sat.rolloff,
 					sat.pilot,
-					sat.is_id&0xff, (sat.is_id>>8)&0x3FFFF, (sat.is_id>>26)&0x03);
+					sat.is_id & 0xff, sat.pls_code & 0x3FFFF, sat.pls_mode & 3);
 			}
 			else
 			{
@@ -1041,7 +1043,7 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 				}
 				if (freq && sr && pol != -1)
 				{
-					tuple = PyTuple_New(13);
+					tuple = PyTuple_New(15);
 					PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong(0));
 					PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong(freq));
 					PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong(sr));
@@ -1052,10 +1054,11 @@ PyObject *eDVBDB::readSatellites(ePyObject sat_list, ePyObject sat_dict, ePyObje
 					PyTuple_SET_ITEM(tuple, 7, PyInt_FromLong(inv));
 					PyTuple_SET_ITEM(tuple, 8, PyInt_FromLong(rolloff));
 					PyTuple_SET_ITEM(tuple, 9, PyInt_FromLong(pilot));
-					is_id = is_id != -1 ? ((pls_mode<<26) | (pls_code<<8) | (is_id&0xff)) : -1;
-					PyTuple_SET_ITEM(tuple, 10, PyInt_FromLong(is_id));
-					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(tsid));
-					PyTuple_SET_ITEM(tuple, 12, PyInt_FromLong(onid));
+					PyTuple_SET_ITEM(tuple, 10, PyInt_FromLong(is_id & 0xff));
+					PyTuple_SET_ITEM(tuple, 11, PyInt_FromLong(pls_mode & 3));
+					PyTuple_SET_ITEM(tuple, 12, PyInt_FromLong(pls_code & 0x3FFFF));
+					PyTuple_SET_ITEM(tuple, 13, PyInt_FromLong(tsid));
+					PyTuple_SET_ITEM(tuple, 14, PyInt_FromLong(onid));
 					PyList_Append(tplist, tuple);
 					Py_DECREF(tuple);
 				}

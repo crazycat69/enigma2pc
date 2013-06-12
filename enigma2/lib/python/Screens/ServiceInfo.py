@@ -149,8 +149,11 @@ class ServiceInfo(Screen):
 						 "bandwidth"		: _("Bandwidth"),
 						 "polarization"		: _("Polarization"),
 						 "inversion"		: _("Inversion"),
-						 "pilot"			: _("Pilot"),
-						 "rolloff"			: _("Roll-off"),
+						 "pilot"		: _("Pilot"),
+						 "rolloff"		: _("Roll-off"),
+						 "is_id"		: _("Input Stream ID"),
+						 "pls_mode"		: _("PLS Mode"),
+						 "pls_code"		: _("PLS Code"),
 						 "fec_inner"		: _("FEC"),
 						 "code_rate_lp"		: _("Coderate LP"),
 						 "code_rate_hp"		: _("Coderate HP"),
@@ -190,7 +193,7 @@ class ServiceInfo(Screen):
 	def getFEData(self, frontendDataOrg):
 		if frontendDataOrg and len(frontendDataOrg):
 			frontendData = ConvertToHumanReadable(frontendDataOrg)
-			if frontendDataOrg["tuner_type"] == "DVB-S":
+			if frontendDataOrg["tuner_type"] == "DVB-S" and frontendData["system"] == "DVB-S2":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
 						(_("System"), frontendData["system"], TYPE_TEXT),
@@ -203,7 +206,20 @@ class ServiceInfo(Screen):
 						(_("FEC"), frontendData["fec_inner"], TYPE_TEXT),
 						(_("Pilot"), frontendData.get("pilot", None), TYPE_TEXT),
 						(_("Roll-off"), frontendData.get("rolloff", None), TYPE_TEXT),
-						(_("Input Stream ID"), frontendData.get("is_id", 0), TYPE_VALUE_DEC))
+						(_("Input Stream ID"), frontendData["is_id"], TYPE_VALUE_DEC),
+						(_("PLS Mode"), frontendData["pls_mode"], TYPE_TEXT),
+						(_("PLS Code"), frontendData["pls_code"], TYPE_VALUE_DEC))
+			elif frontendDataOrg["tuner_type"] == "DVB-S" and frontendData["system"] == "DVB-S":
+				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
+						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
+						(_("System"), frontendData["system"], TYPE_TEXT),
+						(_("Modulation"), frontendData["modulation"], TYPE_TEXT),
+						(_("Orbital position"), frontendData["orbital_position"], TYPE_VALUE_DEC),
+						(_("Frequency"), frontendData["frequency"], TYPE_VALUE_DEC),
+						(_("Symbol rate"), frontendData["symbol_rate"], TYPE_VALUE_DEC),
+						(_("Polarization"), frontendData["polarization"], TYPE_TEXT),
+						(_("Inversion"), frontendData["inversion"], TYPE_TEXT),
+						(_("FEC"), frontendData["fec_inner"], TYPE_TEXT))
 			elif frontendDataOrg["tuner_type"] == "DVB-C":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
@@ -224,7 +240,7 @@ class ServiceInfo(Screen):
 						(_("Transmission mode"), frontendData["transmission_mode"], TYPE_TEXT),
 						(_("Guard interval"), frontendData["guard_interval"], TYPE_TEXT),
 						(_("Hierarchy info"), frontendData["hierarchy_information"], TYPE_TEXT),
-						(_("PLP ID"), frontendData.get("plp_id", 0), TYPE_VALUE_DEC))
+						(_("PLP ID"), frontendData["plp_id"], TYPE_VALUE_DEC))
 		return [ ]
 
 	def fillList(self, Labels):
