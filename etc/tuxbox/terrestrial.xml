@@ -327,6 +327,12 @@
 		<transponder centre_frequency="850000000" bandwidth="0" constellation="3"/>
 		<transponder centre_frequency="858000000" bandwidth="0" constellation="3"/>
 	</terrestrial>
+	<terrestrial name="Ukraine, Kiev: DVB-T2" flags="5">
+		<transponder centre_frequency="526000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="538000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="554000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="698000000" bandwidth="0" constellation="4" system="1"/>
+	</terrestrial>
 	<terrestrial name="Ukraine, Kharkov: DVB-T2" flags="5">
 		<transponder centre_frequency="554000000" bandwidth="0" constellation="4" system="1"/>
 		<transponder centre_frequency="586000000" bandwidth="0" constellation="4" system="1"/>
@@ -339,10 +345,28 @@
 		<transponder centre_frequency="754000000" bandwidth="0" constellation="4" system="1"/>
 		<transponder centre_frequency="778000000" bandwidth="0" constellation="4" system="1"/>
 	</terrestrial>
+	<terrestrial name="Ukraine, Odessa: DVB-T2" flags="5">
+		<transponder centre_frequency="490000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="562000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="618000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="650000000" bandwidth="0" constellation="4" system="1"/>
+	</terrestrial>
+	<terrestrial name="Russia, Krasnodar: DVB-T2" flags="5">
+		<transponder centre_frequency="618000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
+		<transponder centre_frequency="618000000" bandwidth="0" constellation="2" system="1" plp_id="1"/>
+		<transponder centre_frequency="618000000" bandwidth="0" constellation="2" system="1" plp_id="2"/>
+		<transponder centre_frequency="618000000" bandwidth="0" constellation="2" system="1" plp_id="3"/>
+	</terrestrial>
 	<terrestrial name="Russia, Novosibirsk: DVB-T2" flags="5">
 		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
 		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="1"/>
 		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="2"/>
 		<transponder centre_frequency="530000000" bandwidth="0" constellation="2" system="1" plp_id="3"/>
+	</terrestrial>
+	<terrestrial name="Russia, Volgodonsk: DVB-T2" flags="5">
+		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
+		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="1"/>
+		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="2"/>
+		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="3"/>
 	</terrestrial>
 </locations>
