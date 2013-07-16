@@ -286,6 +286,8 @@ int eDVBSatelliteTransponderData::getModulation() const
 	default: eDebug("got unsupported modulation from frontend! report as QPSK!");
 	case QPSK: return eDVBFrontendParametersSatellite::Modulation_QPSK;
 	case PSK_8: return eDVBFrontendParametersSatellite::Modulation_8PSK;
+	case APSK_16: return eDVBFrontendParametersSatellite::Modulation_16APSK;
+	case APSK_32: return eDVBFrontendParametersSatellite::Modulation_32APSK;
 	}
 }
 
@@ -490,8 +492,10 @@ int eDVBTerrestrialTransponderData::getCodeRateLp() const
 	switch (getProperty(DTV_CODE_RATE_LP))
 	{
 	case FEC_1_2: return eDVBFrontendParametersTerrestrial::FEC_1_2;
+	case FEC_3_5: return eDVBFrontendParametersTerrestrial::FEC_3_5;
 	case FEC_2_3: return eDVBFrontendParametersTerrestrial::FEC_2_3;
 	case FEC_3_4: return eDVBFrontendParametersTerrestrial::FEC_3_4;
+	case FEC_4_5: return eDVBFrontendParametersTerrestrial::FEC_4_5;
 	case FEC_5_6: return eDVBFrontendParametersTerrestrial::FEC_5_6;
 	case FEC_7_8: return eDVBFrontendParametersTerrestrial::FEC_7_8;
 	default:
@@ -506,8 +510,10 @@ int eDVBTerrestrialTransponderData::getCodeRateHp() const
 	switch (getProperty(DTV_CODE_RATE_HP))
 	{
 	case FEC_1_2: return eDVBFrontendParametersTerrestrial::FEC_1_2;
+	case FEC_3_5: return eDVBFrontendParametersTerrestrial::FEC_3_5;
 	case FEC_2_3: return eDVBFrontendParametersTerrestrial::FEC_2_3;
 	case FEC_3_4: return eDVBFrontendParametersTerrestrial::FEC_3_4;
+	case FEC_4_5: return eDVBFrontendParametersTerrestrial::FEC_4_5;
 	case FEC_5_6: return eDVBFrontendParametersTerrestrial::FEC_5_6;
 	case FEC_7_8: return eDVBFrontendParametersTerrestrial::FEC_7_8;
 	default:
@@ -538,6 +544,10 @@ int eDVBTerrestrialTransponderData::getTransmissionMode() const
 	{
 	case TRANSMISSION_MODE_2K: return eDVBFrontendParametersTerrestrial::TransmissionMode_2k;
 	case TRANSMISSION_MODE_8K: return eDVBFrontendParametersTerrestrial::TransmissionMode_8k;
+	case TRANSMISSION_MODE_4K: return eDVBFrontendParametersTerrestrial::TransmissionMode_4k;
+	case TRANSMISSION_MODE_1K: return eDVBFrontendParametersTerrestrial::TransmissionMode_1k;
+	case TRANSMISSION_MODE_16K: return eDVBFrontendParametersTerrestrial::TransmissionMode_16k;
+	case TRANSMISSION_MODE_32K: return eDVBFrontendParametersTerrestrial::TransmissionMode_32k;
 	default:
 	case TRANSMISSION_MODE_AUTO: return eDVBFrontendParametersTerrestrial::TransmissionMode_Auto;
 	}
@@ -553,6 +563,9 @@ int eDVBTerrestrialTransponderData::getGuardInterval() const
 	case GUARD_INTERVAL_1_16: return eDVBFrontendParametersTerrestrial::GuardInterval_1_16;
 	case GUARD_INTERVAL_1_8: return eDVBFrontendParametersTerrestrial::GuardInterval_1_8;
 	case GUARD_INTERVAL_1_4: return eDVBFrontendParametersTerrestrial::GuardInterval_1_4;
+	case GUARD_INTERVAL_1_128: return eDVBFrontendParametersTerrestrial::GuardInterval_1_128;
+	case GUARD_INTERVAL_19_128: return eDVBFrontendParametersTerrestrial::GuardInterval_19_128;
+	case GUARD_INTERVAL_19_256: return eDVBFrontendParametersTerrestrial::GuardInterval_19_256;
 	default:
 	case GUARD_INTERVAL_AUTO: return eDVBFrontendParametersTerrestrial::GuardInterval_Auto;
 	}
