@@ -778,7 +778,7 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 			self.scan_ter.system = ConfigSelection(default = defaultTer["system"], choices = [
 				(eDVBFrontendParametersTerrestrial.System_DVB_T, _("DVB-T")),
 				(eDVBFrontendParametersTerrestrial.System_DVB_T2, _("DVB-T2"))])
-			self.scan_ter.plp_id = ConfigInteger(default = defaultTer.get("plp_id",0), limits = (0, 256))
+			self.scan_ter.plp_id = ConfigInteger(default = defaultTer.get("plp_id",0), limits = (0, 255))
 
 			self.scan_scansat = {}
 			for sat in nimmanager.satList:
