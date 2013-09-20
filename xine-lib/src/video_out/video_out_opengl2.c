@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  *
  * video_out_opengl2.c, a video output plugin using opengl 2.0
@@ -1158,7 +1158,10 @@ static void opengl2_draw_video_bilinear( opengl2_driver_t *that, int guiw, int g
 
 static void opengl2_draw( opengl2_driver_t *that, opengl2_frame_t *frame )
 {
-  glXMakeCurrent( that->display, that->drawable, that->context );
+  if ( !glXMakeCurrent( that->display, that->drawable, that->context ) ) {
+    xprintf( that->xine, XINE_VERBOSITY_LOG, "video_out_opengl2: display unavailable for rendering\n" );
+    return;
+  }
 
   if ( !opengl2_check_textures_size( that, frame->width, frame->height ) ) {
     glXMakeCurrent( that->display, None, NULL );
