@@ -160,7 +160,8 @@ class ServiceInfo(Screen):
 						 "constellation"	: _("Constellation"),
 						 "transmission_mode": _("Transmission mode"),
 						 "guard_interval" 	: _("Guard interval"),
-						 "hierarchy_information": _("Hierarchy information") }
+						 "hierarchy_information": _("Hierarchy information"),
+						 "plp_id"		: _("PLP ID") }
 				Labels = [(conv[i], tp_info[i], i == "orbital_position" and TYPE_VALUE_ORBIT_DEC or TYPE_VALUE_DEC) for i in tp_info.keys() if i in conv]
 				self.fillList(Labels)
 
@@ -228,7 +229,18 @@ class ServiceInfo(Screen):
 						(_("Symbol rate"), frontendData["symbol_rate"], TYPE_VALUE_DEC),
 						(_("Inversion"), frontendData["inversion"], TYPE_TEXT),
 						(_("FEC"), frontendData["fec_inner"], TYPE_TEXT))
-			elif frontendDataOrg["tuner_type"] == "DVB-T":
+			elif frontendDataOrg["tuner_type"] == "DVB-T" and frontendData["system"] == "DVB-T2":
+				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
+						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
+						(_("System"), frontendData["system"], TYPE_TEXT),
+						(_("Modulation"), frontendData["constellation"], TYPE_TEXT),
+						(_("Frequency"), frontendData["frequency"]/1000, TYPE_VALUE_DEC),
+						(_("Bandwidth"), frontendData["bandwidth"], TYPE_VALUE_DEC),
+						(_("FEC"), frontendData["code_rate_hp"], TYPE_TEXT),
+						(_("Transmission mode"), frontendData["transmission_mode"], TYPE_TEXT),
+						(_("Guard interval"), frontendData["guard_interval"], TYPE_TEXT),
+						(_("PLP ID"), frontendData["plp_id"], TYPE_VALUE_DEC))
+			elif frontendDataOrg["tuner_type"] == "DVB-T" and frontendData["system"] == "DVB-T2":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
 						(_("System"), frontendData["system"], TYPE_TEXT),
@@ -239,8 +251,7 @@ class ServiceInfo(Screen):
 						(_("FEC LP"), frontendData["code_rate_lp"], TYPE_TEXT),
 						(_("Transmission mode"), frontendData["transmission_mode"], TYPE_TEXT),
 						(_("Guard interval"), frontendData["guard_interval"], TYPE_TEXT),
-						(_("Hierarchy info"), frontendData["hierarchy_information"], TYPE_TEXT),
-						(_("PLP ID"), frontendData["plp_id"], TYPE_VALUE_DEC))
+						(_("Hierarchy info"), frontendData["hierarchy_information"], TYPE_TEXT))
 		return [ ]
 
 	def fillList(self, Labels):
