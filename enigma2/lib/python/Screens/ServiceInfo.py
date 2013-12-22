@@ -240,7 +240,7 @@ class ServiceInfo(Screen):
 						(_("Transmission mode"), frontendData["transmission_mode"], TYPE_TEXT),
 						(_("Guard interval"), frontendData["guard_interval"], TYPE_TEXT),
 						(_("PLP ID"), frontendData["plp_id"], TYPE_VALUE_DEC))
-			elif frontendDataOrg["tuner_type"] == "DVB-T" and frontendData["system"] == "DVB-T2":
+			elif frontendDataOrg["tuner_type"] == "DVB-T" and frontendData["system"] == "DVB-T":
 				return ((_("NIM"), chr(ord('A') + frontendData["tuner_number"]), TYPE_TEXT),
 						(_("Type"), frontendData["tuner_type"], TYPE_TEXT),
 						(_("System"), frontendData["system"], TYPE_TEXT),
