@@ -5,7 +5,7 @@ INSTALL_E2DIR="/usr/local/e2"
 
 BACKUP_E2="etc/enigma2 etc/tuxbox/*.xml etc/tuxbox/nim_sockets share/enigma2/xine.conf"
 
-REQPKG="xterm unclutter mingetty libmpcdec-dev \
+REQPKG="xterm unclutter mingetty libmpcdec-dev mawk libvpx-dev \
 	"
 for p in $REQPKG; do
         echo -n ">>> Checking \"$p\" : "
@@ -59,6 +59,19 @@ function usage {
 	echo "common usage:"
 	echo "  $0 -b -r : make E2 backup, compile E2, restore E2 conf files"
 	echo ""
+}
+
+function copy_dvbsoftwareca {
+	KERNEL_1="3.7"
+	KERNEL=`uname -r | mawk -F. '{ printf("%d.%d\n",$1,$2); }'`
+	KERNEL_2=`echo -e "$KERNEL\n$KERNEL_1" | sort -V | head -n1`
+
+	echo "You the kernel - $KERNEL, the result compare with the kernel $KERNEL_1 - $KERNEL_2"
+	if [ $KERNEL_2 == "3.7" ]; then
+        	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb-frontends/
+	else
+        	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
+	fi
 }
 
 while [ "$1" != "" ]; do
@@ -205,7 +218,8 @@ else
     echo "An error occured while building OpenPliPC - section dvbsoftwareca"
     exit
   fi
-  sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
+#  sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
+  copy_dvbsoftwareca
   sudo depmod -a
 
 #Insert module dvbsoftwareca and create symlink
@@ -223,7 +237,7 @@ echo "final step: installing E2 conf files"
 echo "--------------------------------------"
 
 #Create symlinks in /lib diectory post install enigma2
-sudo ln -sf /lib/i386-linux-gnu/libc-2.15.so  /lib/libc.so.6
+sudo ln -sf `ls /lib/i386-linux-gnu/libc-2.??.so`  /lib/libc.so.6
 
 #Create symlinks in /usr diectory post install enigma2
 sudo ln -sd $INSTALL_E2DIR/lib/enigma2 /usr/lib/enigma2
