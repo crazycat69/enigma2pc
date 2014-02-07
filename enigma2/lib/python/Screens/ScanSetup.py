@@ -929,18 +929,30 @@ class ScanSetup(ConfigListScreen, Screen, CableTransponderSearchSupport):
 
 		elif nim.isCompatible("DVB-T"):
 			if self.scan_typeterrestrial.value == "single_transponder":
+				if self.scan_ter.system.value == eDVBFrontendParametersTerrestrial.System_DVB_T2:
+					bandwidth = self.scan_ter.bandwidth_t2.value
+					modulation = self.scan_ter.modulation_t2.value
+					fechigh = self.scan_ter.fec_t2.value
+					transmission = self.scan_ter.transmission_t2.value
+					guard = self.scan_ter.guard_t2.value
+				else:
+					bandwidth = self.scan_ter.bandwidth.value
+					fechigh = self.scan_ter.fechigh.value
+					modulation = self.scan_ter.modulation.value
+					transmission = self.scan_ter.transmission.value
+					guard = self.scan_ter.guard.value
 				self.addTerTransponder(tlist,
 						self.scan_ter.frequency.value * 1000,
-						bandwidth = self.scan_ter.bandwidth.value,
-						fechigh = self.scan_ter.fechigh.value,
-						feclow = self.scan_ter.feclow.value,
-						inversion = self.scan_ter.inversion.value,
-						modulation = self.scan_ter.modulation.value,
-						transmission = self.scan_ter.transmission.value,
-						guard = self.scan_ter.guard.value,
-						hierarchy = self.scan_ter.hierarchy.value,
-						system  = self.scan_ter.system.value,
-						plp_id  = self.scan_ter.plp_id.value)
+						bandwidth,
+						fechigh,
+						self.scan_ter.feclow.value,
+						self.scan_ter.inversion.value,
+						modulation,
+						transmission,
+						guard,
+						self.scan_ter.hierarchy.value,
+						self.scan_ter.system.value,
+						self.scan_ter.plp_id.value)
 				removeAll = False
 			elif self.scan_typeterrestrial.value == "complete":
 				getInitialTerrestrialTransponderList(tlist, nimmanager.getTerrestrialDescription(index_to_scan))
