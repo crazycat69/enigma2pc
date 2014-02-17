@@ -336,8 +336,6 @@ RESULT eDVBFrontendParameters::calculateDifference(const iDVBFrontendParameters 
 			if (parm->getDVBT(oterrestrial))
 				return -2;
 
-			if (oterrestrial.plp_id != terrestrial.plp_id)
-				diff = 1 << 27;
 			if (exact && oterrestrial.bandwidth != terrestrial.bandwidth &&
 				oterrestrial.bandwidth && terrestrial.bandwidth)
 				diff = 1 << 30;
@@ -365,6 +363,8 @@ RESULT eDVBFrontendParameters::calculateDifference(const iDVBFrontendParameters 
 				oterrestrial.code_rate_HP != eDVBFrontendParametersTerrestrial::FEC_Auto &&
 				terrestrial.code_rate_HP != eDVBFrontendParametersTerrestrial::FEC_Auto)
 				diff = 1 << 30;
+			else if (oterrestrial.plp_id != terrestrial.plp_id)
+				diff = 1 << 27;
 			else
 				diff = abs(terrestrial.frequency - oterrestrial.frequency) / 1000;
 			return 0;

@@ -427,11 +427,11 @@ void eDVBDB::loadServicelist(const char *file)
 				case eDVBFrontendParametersTerrestrial::Bandwidth_8MHz: ter.bandwidth = 8000000; break;
 				case eDVBFrontendParametersTerrestrial::Bandwidth_7MHz: ter.bandwidth = 7000000; break;
 				case eDVBFrontendParametersTerrestrial::Bandwidth_6MHz: ter.bandwidth = 6000000; break;
-				default:
-				case eDVBFrontendParametersTerrestrial::Bandwidth_Auto: ter.bandwidth = 0; break;
 				case eDVBFrontendParametersTerrestrial::Bandwidth_5MHz: ter.bandwidth = 5000000; break;
 				case eDVBFrontendParametersTerrestrial::Bandwidth_1_712MHz: ter.bandwidth = 1712000; break;
 				case eDVBFrontendParametersTerrestrial::Bandwidth_10MHz: ter.bandwidth = 10000000; break;
+				default:
+				case eDVBFrontendParametersTerrestrial::Bandwidth_Auto: ter.bandwidth = 0; break;
 				}
 				ter.code_rate_HP = code_rate_HP;
 				ter.code_rate_LP = code_rate_LP;
@@ -1313,11 +1313,11 @@ PyObject *eDVBDB::readTerrestrials(ePyObject ter_list, ePyObject tp_dict)
 					case eDVBFrontendParametersTerrestrial::Bandwidth_8MHz: bw = 8000000; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_7MHz: bw = 7000000; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_6MHz: bw = 6000000; break;
-					default:
-					case eDVBFrontendParametersTerrestrial::Bandwidth_Auto: bw = 0; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_5MHz: bw = 5000000; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_1_712MHz: bw = 1712000; break;
 					case eDVBFrontendParametersTerrestrial::Bandwidth_10MHz: bw = 10000000; break;
+					default:
+					case eDVBFrontendParametersTerrestrial::Bandwidth_Auto: bw = 0; break;
 					}
 					if (crh > eDVBFrontendParametersTerrestrial::FEC_4_5)
 						crh = eDVBFrontendParametersTerrestrial::FEC_Auto;
