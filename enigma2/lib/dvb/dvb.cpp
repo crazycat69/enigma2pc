@@ -461,6 +461,14 @@ void *eDVBUsbAdapter::threadproc(void *arg)
 	return user->vtunerPump();
 }
 
+static bool exist_in_pidlist(unsigned short int* pidlist, unsigned short int value)
+{
+	for (int i=0; i<30; ++i)
+		if (pidlist[i] == value)
+			return true;
+	return false;
+}
+
 void *eDVBUsbAdapter::vtunerPump()
 {
 	int pidcount = 0;
@@ -477,6 +485,32 @@ void *eDVBUsbAdapter::vtunerPump()
 #define DEMUX_BUFFER_SIZE (8 * ((188 / 4) * 4096)) /* 1.5MB */
 	ioctl(demuxFd, DMX_SET_BUFFER_SIZE, DEMUX_BUFFER_SIZE);
 
+#if DVB_API_VERSION < 5 || DVB_API_VERSION == 5 && DVB_API_VERSION_MINOR < 5
+	/*
+	 * HACK: several stb's with older DVB API versions do not handle the
+	 * constant starting / stopping of PES filters on their vtuner interface
+	 * very well, eventually they will stop feeding any data.
+	 * In order to work around this problem, we always start a filter, making sure
+	 * 'pidcount' never drops to zero, so the filter is never stopped.
+	 *
+	 * Note that this isn't allowed for recent DVB API versions, because they
+	 * refuse to start filters while the frontend is sleeping (e.g. not tuned).
+	 */
+	{
+		struct dmx_pes_filter_params filter;
+		filter.input = DMX_IN_FRONTEND;
+		filter.flags = 0;
+		filter.pid = 0;
+		filter.output = DMX_OUT_TSDEMUX_TAP;
+		filter.pes_type = DMX_PES_OTHER;
+		if (ioctl(demuxFd, DMX_SET_PES_FILTER, &filter) >= 0
+				&& ioctl(demuxFd, DMX_START) >= 0)
+		{
+			pidcount = 1;
+		}
+	}
+#endif
+
 	while (running)
 	{
 		fd_set rset, xset;
@@ -492,8 +526,6 @@ void *eDVBUsbAdapter::vtunerPump()
 		{
 			if (FD_ISSET(vtunerFd, &xset))
 			{
-				int i, j;
-				int count = 0;
 				struct vtuner_message message;
 				memset(message.pidlist, 0xff, sizeof(message.pidlist));
 				::ioctl(vtunerFd, VTUNER_GET_MESSAGE, &message);
@@ -502,20 +534,12 @@ void *eDVBUsbAdapter::vtunerPump()
 				{
 				case MSG_PIDLIST:
 					/* remove old pids */
-					for (i = 0; i < 30; i++)
+					for (int i = 0; i < 30; i++)
 					{
-						bool found = false;
-						if (pidList[i] == 0xffff) continue;
-						for (j = 0; j < 30; j++)
-						{
-							if (pidList[i] == message.pidlist[j])
-							{
-								found = true;
-								break;
-							}
-						}
-
-						if (found) continue;
+						if (pidList[i] == 0xffff)
+							continue;
+						if (exist_in_pidlist(message.pidlist, pidList[i]))
+							continue;
 
 						if (pidcount > 1)
 						{
@@ -530,20 +554,12 @@ void *eDVBUsbAdapter::vtunerPump()
 					}
 
 					/* add new pids */
-					for (i = 0; i < 30; i++)
+					for (int i = 0; i < 30; i++)
 					{
-						bool found = false;
-						if (message.pidlist[i] == 0xffff) continue;
-						for (j = 0; j < 30; j++)
-						{
-							if (message.pidlist[i] == pidList[j])
-							{
-								found = true;
-								break;
-							}
-						}
-
-						if (found) continue;
+						if (message.pidlist[i] == 0xffff)
+							continue;
+						if (exist_in_pidlist(pidList, message.pidlist[i]))
+							continue;
 
 						if (pidcount)
 						{
@@ -567,10 +583,8 @@ void *eDVBUsbAdapter::vtunerPump()
 					}
 
 					/* copy pids */
-					for (i = 0; i < 30; i++)
-					{
-						pidList[i] = message.pidlist[i];
-					}
+					memcpy(pidList, message.pidlist, sizeof(message.pidlist));
+
 					break;
 				}
 			}
@@ -743,7 +757,7 @@ bool eDVBResourceManager::frontendIsCompatible(int index, const char *type)
 			}
 			else if (!strcmp(type, "DVB-C"))
 			{
-#ifdef SYS_DVBC_ANNEX_A
+#if DVB_API_VERSION > 5 || DVB_API_VERSION == 5 && DVB_API_VERSION_MINOR >= 6
 				return i->m_frontend->supportsDeliverySystem(SYS_DVBC_ANNEX_A, false) || i->m_frontend->supportsDeliverySystem(SYS_DVBC_ANNEX_C, false);
 #else
 				return i->m_frontend->supportsDeliverySystem(SYS_DVBC_ANNEX_AC, false);
@@ -778,7 +792,7 @@ void eDVBResourceManager::setFrontendType(int index, const char *type)
 			}
 			else if (!strcmp(type, "DVB-C"))
 			{
-#ifdef SYS_DVBC_ANNEX_A
+#if DVB_API_VERSION > 5 || DVB_API_VERSION == 5 && DVB_API_VERSION_MINOR >= 6
 				whitelist.push_back(SYS_DVBC_ANNEX_A);
 				whitelist.push_back(SYS_DVBC_ANNEX_C);
 #else
@@ -2206,6 +2220,7 @@ RESULT eDVBChannel::getCurrentPosition(iDVBDemux *decoding_demux, pts_t &pos, in
 		now = pos; /* fixup supplied */
 
 	m_tstools_lock.lock();
+	/* Interesting: the only place where iTSSource->offset() is ever used */
 	r = m_tstools.fixupPTS(m_source ? m_source->offset() : 0, now);
 	m_tstools_lock.unlock();
 	if (r)

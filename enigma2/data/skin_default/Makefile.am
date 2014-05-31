@@ -52,10 +52,12 @@ dist_install_DATA = \
 	screws_mp.png \
 	screws.png \
 	sleeptimer.png \
+	testscreen.png \
 	timeline-now.png \
 	timeline.png \
 	unhandled-key.png \
 	verticalline-plugins.png \
+	vkey_all.png \
 	vkey_backspace.png \
 	vkey_bg.png \
 	vkey_clr.png \

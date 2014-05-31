@@ -108,6 +108,9 @@
 /* Define to 1 if `output_muted' is a member of `audio_info_t'. */
 #undef HAVE_AUDIO_INFO_T_OUTPUT_MUTED
 
+/* define if compiler supports avx inline assembler */
+#undef HAVE_AVX
+
 /* Define to 1 if you have the `basename' function. */
 #undef HAVE_BASENAME
 
@@ -218,6 +221,9 @@
 
 /* Supports ISO _Pragma() macro */
 #undef HAVE_ISOC99_PRAGMA
+
+/* Define to 1 if you have the <jpeglib.h> header file. */
+#undef HAVE_JPEGLIB_H
 
 /* Define this if you have kernel statistics available via kstat interface */
 #undef HAVE_KSTAT

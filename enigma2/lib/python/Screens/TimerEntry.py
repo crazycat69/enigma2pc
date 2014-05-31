@@ -31,10 +31,11 @@ class TimerEntry(Screen, ConfigListScreen):
 		self["canceltext"] = Label(_("Cancel"))
 		self["ok"] = Pixmap()
 		self["cancel"] = Pixmap()
+		self["key_yellow"] = Label(_("Timer type"))
 
 		self.createConfig()
 
-		self["actions"] = NumberActionMap(["SetupActions", "GlobalActions", "PiPSetupActions"],
+		self["actions"] = NumberActionMap(["SetupActions", "GlobalActions", "PiPSetupActions", "ColorActions"],
 		{
 			"ok": self.keySelect,
 			"save": self.keyGo,
@@ -42,7 +43,8 @@ class TimerEntry(Screen, ConfigListScreen):
 			"volumeUp": self.incrementStart,
 			"volumeDown": self.decrementStart,
 			"size+": self.incrementEnd,
-			"size-": self.decrementEnd
+			"size-": self.decrementEnd,
+			"yellow": self.changeTimerType
 		}, -2)
 
 		self.list = []
@@ -53,6 +55,7 @@ class TimerEntry(Screen, ConfigListScreen):
 	def createConfig(self):
 			justplay = self.timer.justplay
 			always_zap = self.timer.always_zap
+			zap_wakeup = self.timer.zap_wakeup
 
 			afterevent = {
 				AFTEREVENT.NONE: "nothing",
@@ -108,8 +111,11 @@ class TimerEntry(Screen, ConfigListScreen):
 				default = {0: "record", 1: "zap", 2: "zap+record"}[justplay + 2*always_zap])
 			if SystemInfo["DeepstandbySupport"]:
 				shutdownString = _("go to deep standby")
+				choicelist = [("always", _("always")), ("from_standby", _("only from standby")), ("from_deep_standby", _("only from deep standby")), ("never", _("never"))]
 			else:
 				shutdownString = _("shut down")
+				choicelist = [("always", _("always")), ("never", _("never"))]
+			self.timerentry_zapwakeup = ConfigSelection(choices = choicelist, default = zap_wakeup)
 			self.timerentry_afterevent = ConfigSelection(choices = [("nothing", _("do nothing")), ("standby", _("go to standby")), ("deepstandby", shutdownString), ("auto", _("auto"))], default = afterevent)
 			self.timerentry_recordingtype = ConfigSelection(choices = [("normal", _("normal")), ("descrambled+ecm", _("descramble and record ecm")), ("scrambled+ecm", _("don't descramble, record ecm"))], default = recordingtype)
 			self.timerentry_type = ConfigSelection(choices = [("once",_("once")), ("repeated", _("repeated"))], default = type)
@@ -117,9 +123,9 @@ class TimerEntry(Screen, ConfigListScreen):
 			self.timerentry_description = ConfigText(default = self.timer.description, visible_width = 50, fixed_size = False)
 			self.timerentry_tags = self.timer.tags[:]
 			self.timerentry_tagsset = ConfigSelection(choices = [not self.timerentry_tags and "None" or " ".join(self.timerentry_tags)])
-
-			self.timerentry_repeated = ConfigSelection(default = repeated, choices = [("daily", _("daily")), ("weekly", _("weekly")), ("weekdays", _("Mon-Fri")), ("user", _("user defined"))])
 			
+			self.timerentry_repeated = ConfigSelection(default = repeated, choices = [("weekly", _("weekly")), ("daily", _("daily")), ("weekdays", _("Mon-Fri")), ("user", _("user defined"))])
+
 			self.timerentry_date = ConfigDateTime(default = self.timer.begin, formatstring = _("%d.%B %Y"), increment = 86400)
 			self.timerentry_starttime = ConfigClock(default = self.timer.begin)
 			self.timerentry_endtime = ConfigClock(default = self.timer.end)
@@ -188,7 +194,9 @@ class TimerEntry(Screen, ConfigListScreen):
 		self.list.append(self.entryStartTime)
 		
 		self.entryShowEndTime = getConfigListEntry(_("Set end time"), self.timerentry_showendtime)
+		self.entryZapWakeup = getConfigListEntry(_("Wakeup receiver for start timer"), self.timerentry_zapwakeup)
 		if self.timerentry_justplay.value == "zap":
+			self.list.append(self.entryZapWakeup)
 			self.list.append(self.entryShowEndTime)
 		self.entryEndTime = getConfigListEntry(_("End time"), self.timerentry_endtime)
 		if self.timerentry_justplay.value != "zap" or self.timerentry_showendtime.value:
@@ -298,9 +306,11 @@ class TimerEntry(Screen, ConfigListScreen):
 		self.timer.description = self.timerentry_description.value
 		self.timer.justplay = self.timerentry_justplay.value == "zap"
 		self.timer.always_zap = self.timerentry_justplay.value == "zap+record"
+		self.timer.zap_wakeup = self.timerentry_zapwakeup.value
 		if self.timerentry_justplay.value == "zap":
 			if not self.timerentry_showendtime.value:
 				self.timerentry_endtime.value = self.timerentry_starttime.value
+				self.timerentry_afterevent.value = "nothing"
 		self.timer.resetRepeated()
 		self.timer.afterEvent = {
 			"nothing": AFTEREVENT.NONE,
@@ -378,6 +388,11 @@ class TimerEntry(Screen, ConfigListScreen):
 					self.timer.service_ref = ServiceReference(event.getLinkageService(parent, 0))
 		self.saveTimer()
 		self.close((True, self.timer))
+
+	def changeTimerType(self):
+		self.timerentry_justplay.selectNext()
+		self.timerJustplayEntry = getConfigListEntry(_("Timer type"), self.timerentry_justplay)
+		self["config"].invalidate(self.timerJustplayEntry)
 
 	def incrementStart(self):
 		self.timerentry_starttime.increment()

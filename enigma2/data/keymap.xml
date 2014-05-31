@@ -365,6 +365,8 @@
 			<key id="KEY_NEXTSONG" mapto="seekFwdManual" flags="l" />
 			<key id="KEY_RED" mapto="seekBack" flags="b" />
 			<key id="KEY_BLUE" mapto="seekFwd" flags="b" />
+			<key id="KEY_PREVIOUS" mapto="jumpPreviousMark" flags="m" />
+			<key id="KEY_NEXT" mapto="jumpNextMark" flags="m" />
 		</device>
 		<device name="Lirc">
 			<key id="KEY_PLAY" mapto="playpauseService" flags="m" />
@@ -375,6 +377,8 @@
 			<key id="KEY_NEXTSONG" mapto="seekFwdManual" flags="l" />
 			<key id="KEY_RED" mapto="seekBack" flags="b" />
 			<key id="KEY_BLUE" mapto="seekFwd" flags="b" />
+			<key id="KEY_PREVIOUS" mapto="jumpPreviousMark" flags="m" />
+			<key id="KEY_NEXT" mapto="jumpNextMark" flags="m" />
 		</device>
 
 		<key id="KEY_LEFT" mapto="seekBack" flags="m" />
@@ -512,12 +516,26 @@
 			<key id="KEY_STOP" mapto="leavePlayer" flags="m" />
 			<key id="KEY_EXIT" mapto="leavePlayerOnExit" flags="m" />
 			<key id="KEY_ESC" mapto="leavePlayerOnExit" flags="m" />
+			<key id="KEY_PREVIOUS" mapto="movePrev" flags="b" />
+			<key id="KEY_NEXT" mapto="moveNext" flags="b" />
+			<key id="KEY_AUDIO" mapto="AudioSelection" flags="m" />
+			<key id="KEY_INFO" mapto="InfoButtonPressed" flags="b" />
+			<key id="KEY_EPG" mapto="EPGButtonPressed" flags="b" />
+			<key id="KEY_INFO" mapto="InfoButtonPressedLong" flags="l" />
+			<key id="KEY_EPG" mapto="EPGButtonPressedLong" flags="l" />
 		</device>
 		<device name="Lirc">
 			<key id="KEY_TV" mapto="leavePlayer" flags="m" />
 			<key id="KEY_STOP" mapto="leavePlayer" flags="m" />
 			<key id="KEY_EXIT" mapto="leavePlayerOnExit" flags="m" />
 			<key id="KEY_ESC" mapto="leavePlayerOnExit" flags="m" />
+			<key id="KEY_PREVIOUS" mapto="movePrev" flags="b" />
+			<key id="KEY_NEXT" mapto="moveNext" flags="b" />
+			<key id="KEY_AUDIO" mapto="AudioSelection" flags="m" />
+			<key id="KEY_INFO" mapto="InfoButtonPressed" flags="b" />
+			<key id="KEY_EPG" mapto="EPGButtonPressed" flags="b" />
+			<key id="KEY_INFO" mapto="InfoButtonPressedLong" flags="l" />
+			<key id="KEY_EPG" mapto="EPGButtonPressedLong" flags="l" />
 		</device>
 	</map>
 	
@@ -682,6 +700,15 @@
 		<key id="KEY_DOWN" mapto="downUp" flags="b" />
 	</map>
 	
+	<map context="AudioSelectionActions">
+		<key id="KEY_RED" mapto="red" flags="m" />
+		<key id="KEY_GREEN" mapto="green" flags="m" />
+		<key id="KEY_AUDIO" mapto="yellow" flags="m" />
+		<key id="KEY_SUBTITLE" mapto="yellow" flags="m" />
+		<key id="KEY_YELLOW" mapto="yellow" flags="m" />
+		<key id="KEY_BLUE" mapto="blue" flags="m" />
+	</map>
+
 	<map context="ColorActions">
 		<key id="KEY_RED" mapto="red" flags="m" />
 		<key id="KEY_GREEN" mapto="green" flags="m" />

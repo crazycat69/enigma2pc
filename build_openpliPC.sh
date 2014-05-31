@@ -5,7 +5,8 @@ INSTALL_E2DIR="/usr/local/e2"
 
 BACKUP_E2="etc/enigma2 etc/tuxbox/*.xml etc/tuxbox/nim_sockets share/enigma2/xine.conf"
 
-REQPKG="xterm unclutter mingetty libmpcdec-dev mawk libvpx-dev \
+REQPKG="xterm unclutter mingetty libmpcdec-dev mawk libvpx-dev python-twisted-web \
+	libnl-3-dev libnl-genl-3-dev linux-headers-`uname -r` \
 	"
 for p in $REQPKG; do
         echo -n ">>> Checking \"$p\" : "
@@ -67,10 +68,7 @@ function copy_dvbsoftwareca {
 	KERNEL_2=`echo -e "$KERNEL\n$KERNEL_1" | sort -V | head -n1`
 
 	echo "You the kernel - $KERNEL, the result compare with the kernel $KERNEL_1 - $KERNEL_2"
-	if [ $KERNEL_2 == "3.7" ]; then
-        	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb-frontends/
-	else
-        	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
+	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
 	fi
 }
 
@@ -180,6 +178,7 @@ if [ "$DO_CONFIGURE" -eq "1" ]; then
 
 #Create symlinks in /usr diectory before compile enigma2
   sudo ln -sd /usr/share/swig2.0 /usr/share/swig1.3
+  sudo ln -sd /usr/include/libnl3/netlink /usr/include/netlink
 
   autoreconf -i
   ./configure --prefix=$INSTALL_E2DIR --with-xlib --with-debug
@@ -210,6 +209,7 @@ else
     echo "An error occured while building OpenPliPC - section make install"
     exit
   fi
+fi
   cd dvbsoftwareca
   sudo make -j"$DO_PARALLEL"
   if [ ! $? -eq 0 ]
@@ -229,7 +229,6 @@ else
         sudo ln -s /dev/dvb/adapter0/demux0 /dev/dvb/adapter0/demux1
   fi
 
-fi  
 cd ../..
 
 echo "--------------------------------------"
@@ -237,19 +236,20 @@ echo "final step: installing E2 conf files"
 echo "--------------------------------------"
 
 #Create symlinks in /lib diectory post install enigma2
-sudo ln -sf `ls /lib/i386-linux-gnu/libc-2.??.so`  /lib/libc.so.6
+ARCH_MY=`uname -i`
+sudo ln -sf `ls /lib/"$ARCH_MY"-linux-gnu/libc-2.??.so`  /lib/libc.so.6
 
 #Create symlinks in /usr diectory post install enigma2
 sudo ln -sd $INSTALL_E2DIR/lib/enigma2 /usr/lib/enigma2
 sudo ln -sd $INSTALL_E2DIR/lib/enigma2 /usr/local/lib/enigma2
+sudo rm -fR $INSTALL_E2DIR/lib/enigma2/enigma2
 sudo ln -sd $INSTALL_E2DIR/share/enigma2 /usr/local/share/enigma2
 sudo ln -sd $INSTALL_E2DIR/share/enigma2 /usr/share/enigma2
+sudo rm -fR $INSTALL_E2DIR/share/enigma2/enigma2
 sudo ln -sd $INSTALL_E2DIR/include/enigma2 /usr/include/enigma2
+sudo rm -fR $INSTALL_E2DIR/include/enigma2/enigma2
 sudo ln -sd $INSTALL_E2DIR/etc/stb /usr/local/etc/stb
-
-#Create symlinks in /etc diectory post install enigma2
-sudo ln -s -d $INSTALL_E2DIR/etc/enigma2 /etc/enigma2
-sudo ln -s -d $INSTALL_E2DIR/etc/tuxbox /etc/tuxbox
+sudo rm -fR $INSTALL_E2DIR/etc/stb/stb
 
 # strip binary
 sudo strip $INSTALL_E2DIR/bin/enigma2
@@ -267,6 +267,12 @@ sudo cp -fR scripts/* $INSTALL_E2DIR/bin/
 
 sudo ln -sf $INSTALL_E2DIR/bin/enigma2 ./e2bin
 sudo ln -sf $INSTALL_E2DIR/bin/enigma2.sh /usr/local/bin/enigma2.sh
+
+#Create symlinks in /etc diectory post install enigma2
+sudo ln -s -d $INSTALL_E2DIR/etc/enigma2 /etc/enigma2
+sudo rm -fR $INSTALL_E2DIR/etc/enigma2/enigma2
+sudo ln -s -d $INSTALL_E2DIR/etc/tuxbox /etc/tuxbox
+sudo rm -fR $INSTALL_E2DIR/etc/tuxbox/tuxbox
 
 if [ "$DO_RESTORE" -eq "1" ]; then
 	e2_restore

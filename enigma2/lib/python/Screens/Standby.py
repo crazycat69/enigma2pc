@@ -33,7 +33,7 @@ class Standby(Screen):
 		if self.wasMuted == 0:
 			eDVBVolumecontrol.getInstance().volumeToggleMute()
 
-	def __init__(self, session):
+	def __init__(self, session, StandbyCounterIncrease=True):
 		Screen.__init__(self, session)
 		self.avswitch = AVSwitch()
 
@@ -45,6 +45,8 @@ class Standby(Screen):
 		}, -1)
 
 		globalActionMap.setEnabled(False)
+
+		self.StandbyCounterIncrease = StandbyCounterIncrease
 
 		#mute adc
 		self.setMute()
@@ -86,21 +88,21 @@ class Standby(Screen):
 		self.session.screen["Standby"].boolean = False
 		globalActionMap.setEnabled(True)
 		if RecordTimer.RecordTimerEntry.receiveRecordEvents:
-			Notifications.RemovePopup(id = "RecordTimerQuitMainloop")
 			RecordTimer.RecordTimerEntry.stopTryQuitMainloop()
 
 	def __onFirstExecBegin(self):
 		global inStandby
 		inStandby = self
 		self.session.screen["Standby"].boolean = True
-		config.misc.standbyCounter.value += 1
+		if self.StandbyCounterIncrease:
+			config.misc.standbyCounter.value += 1
 
 	def createSummary(self):
 		return StandbySummary
 
 	def standbyTimeout(self):
 		from RecordTimer import RecordTimerEntry
-		RecordTimerEntry.TryQuitMainloop(True)
+		RecordTimerEntry.TryQuitMainloop()
 
 class StandbySummary(Screen):
 	skin = """

@@ -135,6 +135,7 @@ public:
 	int getInfo(int w);
 	std::string getInfoString(int w);
 	ePtr<iDVBTransponderData> getTransponderData();
+	void getAITApplications(std::map<int, std::string> &aitlist);
 	void getCaIds(std::vector<int> &caids, std::vector<int> &ecmpids);
 
 		// iAudioTrackSelection	
@@ -196,7 +197,7 @@ protected:
 	ePtr<eDVBService> m_dvb_service;
 	
 	ePtr<iTSMPEGDecoder> m_decoder;
-	int m_is_primary;
+	int m_decoder_index;
 	int m_have_video_pid;
 	int m_tune_state;
 	

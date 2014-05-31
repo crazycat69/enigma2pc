@@ -69,12 +69,8 @@ l_listtype = [(str(MovieList.LISTTYPE_ORIGINAL), _("list style default")),
 def defaultMoviePath():
 	result = config.usage.default_path.value
 	if not os.path.isdir(result):
-		for mount in Components.Harddisk.getProcMounts():
-			if mount[1].startswith('/media/'):
-				result = mount[1]
-				if not result.endswith('/'):
-					result += '/'
-				break
+		from Tools import Directories
+		return Directories.defaultRecordingLocation()
 	return result
 
 def setPreferredTagEditor(te):
@@ -431,6 +427,9 @@ class MovieSelectionSummary(Screen):
 			self["name"].text = ""
 
 class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
+	# SUSPEND_PAUSES actually means "please call my pauseService()"
+	ALLOW_SUSPEND = Screen.SUSPEND_PAUSES
+
 	def __init__(self, session, selectedmovie = None, timeshiftEnabled = False):
 		Screen.__init__(self, session)
 		HelpableScreen.__init__(self)
@@ -473,6 +472,8 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 		self.movieOff = self.settings["movieoff"]
 
 		self["list"] = MovieList(None, list_type=self.settings["listtype"], sort_type=self.settings["moviesort"], descr_state=self.settings["description"])
+
+		self.loadLocalSettings()
 
 		self.list = self["list"]
 		self.selectedmovie = selectedmovie
@@ -765,6 +766,16 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 			self["Service"].newService(None)
 			self["DescriptionBorder"].hide()
 			self["list"].instance.resize(eSize(self.listWidth, self.listHeight))
+
+	def pauseService(self):
+		# Called when pressing Power button (go to standby)
+		self.playbackStop()
+		self.session.nav.stopService()
+
+	def unPauseService(self):
+		# When returning from standby. It might have been a while, so
+		# reload the list.
+		self.reloadList()
 
 	def can_delete(self, item):
 		if not item:
@@ -1264,7 +1275,10 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 			d = os.path.normpath(p.mountpoint)
 			if d in inlist:
 				# improve shortcuts to mountpoints
-				bookmarks[bookmarks.index((d,d))] = (p.tabbedDescription(), d)
+				try:
+					bookmarks[bookmarks.index((d,d))] = (p.tabbedDescription(), d)
+				except:
+					pass # When already listed as some "friendly" name
 			else:
 				bookmarks.append((p.tabbedDescription(), d))
 			inlist.append(d)
@@ -1332,8 +1346,8 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 	def can_createdir(self, item):
 		return True
 	def do_createdir(self):
-		from Screens.InputBox import InputBox
-		self.session.openWithCallback(self.createDirCallback, InputBox,
+		from Screens.VirtualKeyBoard import VirtualKeyBoard
+		self.session.openWithCallback(self.createDirCallback, VirtualKeyBoard,
 			title = _("Please enter name of the new directory"),
 			text = "")
 	def createDirCallback(self, name):
@@ -1373,8 +1387,8 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 		else:
 			info = item[1]
 			name = info.getName(item[0])
-		from Screens.InputBox import InputBox
-		self.session.openWithCallback(self.renameCallback, InputBox,
+		from Screens.VirtualKeyBoard import VirtualKeyBoard
+		self.session.openWithCallback(self.renameCallback, VirtualKeyBoard,
 			title = _("Rename"),
 			text = name)
 
@@ -1648,7 +1662,7 @@ class MovieSelection(Screen, HelpableScreen, SelectionEventInfo, InfoBarBase):
 				rec_filename = os.path.split(current.getPath())[1]
 				if rec_filename.endswith(".ts"): rec_filename = rec_filename[:-3]
 				for timer in NavigationInstance.instance.RecordTimer.timer_list:
-					if timer.isRunning() and not timer.justplay and timer.Filename.find(rec_filename)>=0:
+					if timer.isRunning() and not timer.justplay and rec_filename in timer.Filename:
 						choices = [
 							(_("Cancel"), None),
 							(_("Stop recording"), ("s", timer)),

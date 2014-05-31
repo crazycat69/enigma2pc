@@ -3,6 +3,7 @@
 
 #ifndef SWIG
 #include <lib/dvb/idvb.h>
+#include <lib/dvb/frontend.h>
 #include <lib/base/eptrlist.h>
 #include <set>
 #include <vector>

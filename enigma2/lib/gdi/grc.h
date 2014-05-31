@@ -244,7 +244,8 @@ public:
 	{
 		BT_ALPHATEST = 1,
 		BT_ALPHABLEND = 2,
-		BT_SCALE = 4 /* will be automatically set by blitScale */
+		BT_SCALE = 4, /* will be automatically set by blitScale */
+		BT_KEEP_ASPECT_RATIO = 8
 	};
 
 	void blit(gPixmap *pixmap, ePoint pos, const eRect &clip=eRect(), int flags=0);
@@ -299,7 +300,7 @@ public:
 	int getPixmap(ePtr<gPixmap> &pm) { pm = m_pixmap; return 0; }
 	gRGB getRGB(gColor col);
 	virtual eSize size() { return m_pixmap->size(); }
-	virtual int islocked() { return 0; }
+	virtual int islocked() const { return 0; }
 	
 	virtual void enableSpinner();
 	virtual void disableSpinner();

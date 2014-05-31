@@ -265,9 +265,9 @@ class eDVBService: public iStaticServiceInformation
 public:
 	enum cacheID
 	{
-		cVPID, cAPID, cTPID, cPCRPID, cAC3PID,
+		cVPID, cMPEGAPID, cTPID, cPCRPID, cAC3PID,
 		cVTYPE, cACHANNEL, cAC3DELAY, cPCMDELAY,
-		cSUBTITLE, cacheMax
+		cSUBTITLE, cAACHEAPID=12, cacheMax
 	};
 
 	int getCacheEntry(cacheID);
@@ -661,7 +661,7 @@ public:
 	virtual RESULT createSectionReader(eMainloop *context, ePtr<iDVBSectionReader> &reader)=0;
 	virtual RESULT createPESReader(eMainloop *context, ePtr<iDVBPESReader> &reader)=0;
 	virtual RESULT createTSRecorder(ePtr<iDVBTSRecorder> &recorder, int packetsize = 188, bool streaming=false)=0;
-	virtual RESULT getMPEGDecoder(ePtr<iTSMPEGDecoder> &reader, int primary=1)=0;
+	virtual RESULT getMPEGDecoder(ePtr<iTSMPEGDecoder> &reader, int index = 0)=0;
 	virtual RESULT getSTC(pts_t &pts, int num=0)=0;
 	virtual RESULT getCADemuxID(uint8_t &id)=0;
 	virtual RESULT getCAAdapterID(uint8_t &id)=0;

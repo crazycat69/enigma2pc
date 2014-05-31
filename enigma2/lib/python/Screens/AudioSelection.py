@@ -23,7 +23,7 @@ class AudioSelection(Screen, ConfigListScreen):
 	def __init__(self, session, infobar=None, page=PAGE_AUDIO):
 		Screen.__init__(self, session)
 
-		self["streams"] = List([])
+		self["streams"] = List([], enableWrapAround=True)
 		self["key_red"] = Boolean(False)
 		self["key_green"] = Boolean(False)
 		self["key_yellow"] = Boolean(True)
@@ -39,7 +39,7 @@ class AudioSelection(Screen, ConfigListScreen):
 		self.cached_subtitle_checked = False
 		self.__selected_subtitle = None
 
-		self["actions"] = NumberActionMap(["ColorActions", "SetupActions", "DirectionActions", "MenuActions"],
+		self["actions"] = NumberActionMap(["AudioSelectionActions", "SetupActions", "DirectionActions", "MenuActions"],
 		{
 			"red": self.keyRed,
 			"green": self.keyGreen,
@@ -290,18 +290,26 @@ class AudioSelection(Screen, ConfigListScreen):
 	def keyRed(self):
 		if self["key_red"].getBoolean():
 			self.colorkey(0)
+		else:
+			return 0
 
 	def keyGreen(self):
 		if self["key_green"].getBoolean():
 			self.colorkey(1)
+		else:
+			return 0
 
 	def keyYellow(self):
 		if self["key_yellow"].getBoolean():
 			self.colorkey(2)
+		else:
+			return 0
 
 	def keyBlue(self):
 		if self["key_blue"].getBoolean():
 			self.colorkey(3)
+		else:
+			return 0
 
 	def colorkey(self, idx):
 		self["config"].setCurrentIndex(idx)

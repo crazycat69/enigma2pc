@@ -1007,7 +1007,7 @@ RESULT eServiceFactoryDVB::lookupService(ePtr<eDVBService> &service, const eServ
 eDVBServicePlay::eDVBServicePlay(const eServiceReference &ref, eDVBService *service):
 	m_reference(ref),
 	m_dvb_service(service),
-	m_is_primary(1),
+	m_decoder_index(0),
 	m_have_video_pid(0),
 	m_tune_state(-1),
 	m_is_stream(ref.path.substr(0, 7) == "http://"),
@@ -1070,16 +1070,17 @@ eDVBServicePlay::~eDVBServicePlay()
 
 void eDVBServicePlay::gotNewEvent(int error)
 {
+	ePtr<eServiceEvent> event_now;
+	getEvent(event_now, 0);
 #if 0
 		// debug only
-	ePtr<eServiceEvent> m_event_now, m_event_next;
-	getEvent(m_event_now, 0);
-	getEvent(m_event_next, 1);
+	ePtr<eServiceEvent> event_next;
+	getEvent(event_next, 1);
 
-	if (m_event_now)
-		eDebug("now running: %s (%d seconds :)", m_event_now->m_event_name.c_str(), m_event_now->m_duration);
-	if (m_event_next)
-		eDebug("next running: %s (%d seconds :)", m_event_next->m_event_name.c_str(), m_event_next->m_duration);
+	if (event_now)
+		eDebug("now running: %s (%d seconds :)", event_now->m_event_name.c_str(), event_now->m_duration);
+	if (event_next)
+		eDebug("next running: %s (%d seconds :)", event_next->m_event_name.c_str(), event_next->m_duration);
 #endif
 	if (!error)
 	{
@@ -1090,6 +1091,32 @@ void eDVBServicePlay::gotNewEvent(int error)
 	{
 		/* our eit reader has stopped, we have to take care of our own event updates */
 		updateEpgCacheNowNext();
+	}
+
+	if (m_timeshift_enabled)
+	{
+		if (!event_now)
+			return;
+
+		pts_t now_pts, first_pts, fixup_pts;
+		if (m_record)
+		{
+			if (m_record->getCurrentPCR(now_pts))
+				eDebug("getting current PTS failed!");
+			else
+			{
+				if (m_record->getFirstPTS(first_pts))
+					return;
+				if (now_pts < first_pts)
+					fixup_pts = now_pts + 0x200000000LL - first_pts;
+				else
+					fixup_pts = now_pts - first_pts;
+				m_cue_entries.insert(cueEntry(fixup_pts, 2));
+				m_cuesheet_changed = 1;
+				eDebug("pts of eit change: %llx, fixup_pts: %llx, first_pts: %llx", now_pts, fixup_pts, first_pts);
+				m_event((iPlayableService*)this, evCuesheetChanged);
+			}
+		}
 	}
 }
 
@@ -1423,6 +1450,11 @@ RESULT eDVBServicePlay::stop()
 		}
 	}
 
+	if ((m_is_pvr || m_timeshift_enabled) && m_cuesheet_changed)
+	{
+		saveCuesheet();
+	}
+
 	stopTimeshift(); /* in case timeshift was enabled, remove buffer etc. */
 
 	// stop openpliPC
@@ -1440,12 +1472,6 @@ RESULT eDVBServicePlay::stop()
 	m_service_handler_timeshift.free();
 	m_service_handler.free();
 
-	if (m_is_pvr && m_cuesheet_changed)
-	{
-				/* save cuesheet only when main file is accessible. */
-		if (::access(m_reference.path.c_str(), R_OK) >= 0)
-			saveCuesheet();
-	}
 	m_nownext_timer->stop();
 	m_event((iPlayableService*)this, evStopped);
 	return 0;
@@ -1453,7 +1479,7 @@ RESULT eDVBServicePlay::stop()
 
 RESULT eDVBServicePlay::setTarget(int target)
 {
-	m_is_primary = !target;
+	m_decoder_index = target;
 	return 0;
 }
 
@@ -1777,7 +1803,7 @@ RESULT eDVBServicePlay::timeshift(ePtr<iTimeshiftService> &ptr)
 
 RESULT eDVBServicePlay::cueSheet(ePtr<iCueSheet> &ptr)
 {
-	if (m_is_pvr)
+	if (m_is_pvr || m_timeshift_enabled)
 	{
 		ptr = this;
 		return 0;
@@ -1940,10 +1966,13 @@ int eDVBServicePlay::getInfo(int w)
 	case sAudioPID:
 		if (m_dvb_service)
 		{
-			int apid = m_dvb_service->getCacheEntry(eDVBService::cAPID);
+			int apid = m_dvb_service->getCacheEntry(eDVBService::cMPEGAPID);
 			if (apid != -1)
 				return apid;
 			apid = m_dvb_service->getCacheEntry(eDVBService::cAC3PID);
+			if (apid != -1)
+				return apid;
+			apid = m_dvb_service->getCacheEntry(eDVBService::cAACHEAPID);
 			if (apid != -1)
 				return apid;
 		}
@@ -2003,6 +2032,11 @@ std::string eDVBServicePlay::getInfoString(int w)
 ePtr<iDVBTransponderData> eDVBServicePlay::getTransponderData()
 {
 	return eStaticServiceDVBInformation().getTransponderData(m_reference);
+}
+
+void eDVBServicePlay::getAITApplications(std::map<int, std::string> &aitlist)
+{
+	return m_service_handler.getAITApplications(aitlist);
 }
 
 void eDVBServicePlay::getCaIds(std::vector<int> &caids, std::vector<int> &ecmpids)
@@ -2149,7 +2183,7 @@ int eDVBServicePlay::selectAudioStream(int i)
 	int rdsPid = apid;
 
 		/* if we are not in PVR mode, timeshift is not active and we are not in pip mode, check if we need to enable the rds reader */
-	if (!(m_is_pvr || m_timeshift_active || !m_is_primary || m_have_video_pid))
+	if (!(m_is_pvr || m_timeshift_active || m_decoder_index || m_have_video_pid))
 	{
 		int different_pid = program.videoStreams.empty() && program.audioStreams.size() == 1 && program.audioStreams[stream].rdsPid != -1;
 		if (different_pid)
@@ -2177,22 +2211,31 @@ int eDVBServicePlay::selectAudioStream(int i)
 				    the cache contains the correct audio pid and type)
 			*/
 	if (m_dvb_service && ((i != -1) || (program.audioStreams.size() == 1)
-		|| ((m_dvb_service->getCacheEntry(eDVBService::cAPID) == -1) && (m_dvb_service->getCacheEntry(eDVBService::cAC3PID)==-1))))
+		|| ((m_dvb_service->getCacheEntry(eDVBService::cMPEGAPID) == -1) && (m_dvb_service->getCacheEntry(eDVBService::cAC3PID)==-1) && (m_dvb_service->getCacheEntry(eDVBService::cAACHEAPID) == -1))))
 	{
 		if (apidtype == eDVBAudio::aMPEG)
 		{
-			m_dvb_service->setCacheEntry(eDVBService::cAPID, apid);
+			m_dvb_service->setCacheEntry(eDVBService::cMPEGAPID, apid);
 			m_dvb_service->setCacheEntry(eDVBService::cAC3PID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cAACHEAPID, -1);
 		}
 		else if (apidtype == eDVBAudio::aAC3)
 		{
-			m_dvb_service->setCacheEntry(eDVBService::cAPID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cMPEGAPID, -1);
 			m_dvb_service->setCacheEntry(eDVBService::cAC3PID, apid);
+			m_dvb_service->setCacheEntry(eDVBService::cAACHEAPID, -1);
+		}
+		else if (apidtype == eDVBAudio::aAACHE)
+		{
+			m_dvb_service->setCacheEntry(eDVBService::cMPEGAPID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cAC3PID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cAACHEAPID, apid);
 		}
 		else
 		{
-			m_dvb_service->setCacheEntry(eDVBService::cAPID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cMPEGAPID, -1);
 			m_dvb_service->setCacheEntry(eDVBService::cAC3PID, -1);
+			m_dvb_service->setCacheEntry(eDVBService::cAACHEAPID, -1);
 		}
 	}
 
@@ -2446,6 +2489,7 @@ RESULT eDVBServicePlay::stopTimeshift(bool swToLive)
 		eDebug("remove timeshift files");
 		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file);
 		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".sc");
+		eBackgroundFileEraser::getInstance()->erase(m_timeshift_file + ".cuts");
 	}
 	else
 	{
@@ -2872,7 +2916,7 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 		h.getDecodeDemux(m_decode_demux);
 		if (m_decode_demux)
 		{
-			m_decode_demux->getMPEGDecoder(m_decoder, m_is_primary);
+			m_decode_demux->getMPEGDecoder(m_decoder, m_decoder_index);
 			if (m_decoder)
 				m_decoder->connectVideoEvent(slot(*this, &eDVBServicePlay::video_event), m_video_event_connection);
 		}
@@ -2935,7 +2979,7 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 		else
 			m_decoder->setSyncPCR(-1);
 
-		if (m_is_primary)
+		if (m_decoder_index == 0)
 		{
 			m_decoder->setTextPID(tpid);
 		}
@@ -2961,7 +3005,7 @@ void eDVBServicePlay::updateDecoder(bool sendSeekableStateChanged)
 
 		m_decoder->setAudioChannel(achannel);
 
-		if (mustPlay && m_decode_demux && m_is_primary)
+		if (mustPlay && m_decode_demux && m_decoder_index == 0)
 		{
 			m_teletext_parser = new eDVBTeletextParser(m_decode_demux);
 			m_teletext_parser->connectNewStream(slot(*this, &eDVBServicePlay::newSubtitleStream), m_new_subtitle_stream_connection);
@@ -3049,7 +3093,13 @@ void eDVBServicePlay::loadCuesheet()
 
 void eDVBServicePlay::saveCuesheet()
 {
-	std::string filename = m_reference.path + ".cuts";
+	std::string filename = m_timeshift_enabled ? m_timeshift_file : m_reference.path;
+
+		/* save cuesheet only when main file is accessible. */
+	if (::access(filename.c_str(), R_OK) < 0)
+		return;
+
+	filename.append(".cuts");
 
 	FILE *f = fopen(filename.c_str(), "wb");
 
