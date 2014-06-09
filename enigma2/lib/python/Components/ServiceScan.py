@@ -63,7 +63,7 @@ class ServiceScan:
 						else:
 							network = ("%s %d.%d %s") % (sat_name, orb_pos / 10, orb_pos % 10, h)
 						if tp.is_id > -1 and tp.system == tp.System_DVB_S2:
-							tp_text = ("%s %s %d%c / %d / %s / %d") %( { tp.System_DVB_S : "DVB-S",
+							tp_text = ("%s %s %d%c / %d / %s %d") %( { tp.System_DVB_S : "DVB-S",
 								tp.System_DVB_S2 : "DVB-S2" }.get(tp.system, ""),
 								{ tp.Modulation_Auto : "Auto", tp.Modulation_QPSK : "QPSK",
 									tp.Modulation_8PSK : "8PSK", tp.Modulation_16APSK : "16APSK", tp.Modulation_32APSK : "32APSK" }.get(tp.modulation, ""),
