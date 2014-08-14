@@ -63,13 +63,10 @@ function usage {
 }
 
 function copy_dvbsoftwareca {
-	KERNEL_1="3.7"
 	KERNEL=`uname -r | mawk -F. '{ printf("%d.%d\n",$1,$2); }'`
-	KERNEL_2=`echo -e "$KERNEL\n$KERNEL_1" | sort -V | head -n1`
 
-	echo "You the kernel - $KERNEL, the result compare with the kernel $KERNEL_1 - $KERNEL_2"
-	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
-	fi
+	echo "You the kernel - $KERNEL"
+	sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media
 }
 
 while [ "$1" != "" ]; do
@@ -218,7 +215,7 @@ fi
     echo "An error occured while building OpenPliPC - section dvbsoftwareca"
     exit
   fi
-#  sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media/dvb/
+#  sudo cp -fR dvbsoftwareca.ko /lib/modules/`uname -r`/kernel/drivers/media
   copy_dvbsoftwareca
   sudo depmod -a
 
