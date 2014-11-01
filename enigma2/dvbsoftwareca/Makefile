@@ -14,3 +14,6 @@ clean:
 	rm -f .*.ko.cmd
 	rm -f modules.order
 	rm -Rf .tmp_versions
+
+install: default
+	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules_install
