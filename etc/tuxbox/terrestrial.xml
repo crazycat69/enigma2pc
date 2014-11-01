@@ -345,6 +345,12 @@
 		<transponder centre_frequency="754000000" bandwidth="0" constellation="4" system="1"/>
 		<transponder centre_frequency="778000000" bandwidth="0" constellation="4" system="1"/>
 	</terrestrial>
+	<terrestrial name="Ukraine, Kegichivka: DVB-T2" flags="5">
+		<transponder centre_frequency="474000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="530000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="578000000" bandwidth="0" constellation="4" system="1"/>
+		<transponder centre_frequency="626000000" bandwidth="0" constellation="4" system="1"/>
+	</terrestrial>
 	<terrestrial name="Ukraine, Odessa: DVB-T2" flags="5">
 		<transponder centre_frequency="490000000" bandwidth="0" constellation="4" system="1"/>
 		<transponder centre_frequency="562000000" bandwidth="0" constellation="4" system="1"/>
@@ -369,6 +375,7 @@
 		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
 		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="1"/>
 		<transponder centre_frequency="650000000" bandwidth="0" constellation="2" system="1" plp_id="2"/>
+		<transponder centre_frequency="682000000" bandwidth="0" constellation="2" system="1"/>
 	</terrestrial>
 	<terrestrial name="Russia, Elets: DVB-T2" flags="5">
 		<transponder centre_frequency="762000000" bandwidth="0" constellation="2" system="1" plp_id="0"/>
