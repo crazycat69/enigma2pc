@@ -108,6 +108,9 @@
 /* Define to 1 if `output_muted' is a member of `audio_info_t'. */
 #undef HAVE_AUDIO_INFO_T_OUTPUT_MUTED
 
+/* Define this if you have libavformat installed */
+#undef HAVE_AVFORMAT
+
 /* define if compiler supports avx inline assembler */
 #undef HAVE_AVX
 
@@ -251,9 +254,6 @@
 
 /* Define this if you have librte mpeg encoder installed (zapping.sf.net) */
 #undef HAVE_LIBRTE
-
-/* Define to 1 if you have the <libsmbclient.h> header file. */
-#undef HAVE_LIBSMBCLIENT_H
 
 /* Define this if you have libv4l installed */
 #undef HAVE_LIBV4L2_H
@@ -477,6 +477,9 @@
 /* Define this if you have theora */
 #undef HAVE_THEORA
 
+/* Define this if x11 does without XLockDisplay (). */
+#undef HAVE_THREAD_SAFE_X11
+
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
 
@@ -495,6 +498,12 @@
 /* Define to 1 if you have the `va_copy' function. */
 #undef HAVE_VA_COPY
 
+/* Define to 1 if you have the <va/va.h> header file. */
+#undef HAVE_VA_VA_H
+
+/* Define to 1 if you have the <va/va_x11.h> header file. */
+#undef HAVE_VA_VA_X11_H
+
 /* Define this if you use external libcdio/libvcdinfo */
 #undef HAVE_VCDNAV
 
@@ -506,6 +515,9 @@
 
 /* Define this if you have vorbis */
 #undef HAVE_VORBIS
+
+/* Define this if you have VP9 support in libvpx */
+#undef HAVE_VPX_VP9_DECODER
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #undef HAVE_VSNPRINTF
@@ -588,9 +600,6 @@
 
 /* Define this if you want to load mlib lazily */
 #undef MLIB_LAZYLOAD
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -773,6 +782,11 @@
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS

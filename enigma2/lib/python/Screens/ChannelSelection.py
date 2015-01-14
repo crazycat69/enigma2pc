@@ -185,7 +185,7 @@ class ChannelContextMenu(Screen):
 				if not csel.movemode:
 					append_when_current_valid(current, menu, (_("enable move mode"), self.toggleMoveMode), level = 1)
 					if not inBouquetRootList and current_root and not (current_root.flags & eServiceReference.isGroup):
-						if not current.toString().startswith("-1"):
+						if current.type != -1:
 							menu.append(ChoiceEntryComponent(text = (_("add marker"), self.showMarkerInputBox)))
 						if haveBouquets:
 							append_when_current_valid(current, menu, (_("enable bouquet edit"), self.bouquetMarkStart), level = 0)
@@ -853,7 +853,7 @@ class ChannelSelectionBase(Screen):
 		self["list"] = ServiceList(self)
 		self.servicelist = self["list"]
 
-		self.numericalTextInput = NumericalTextInput()
+		self.numericalTextInput = NumericalTextInput(handleTimeout=False)
 		self.numericalTextInput.setUseableChars(u'1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 		self.servicePathTV = [ ]
@@ -1413,8 +1413,8 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		self.recallBouquetMode()
 
 	def __evServiceStart(self):
-		if self.dopipzap and self.session.pip.pipservice:
-			self.servicelist.setPlayableIgnoreService(self.session.pip.getCurrentServiceReference())
+		if self.dopipzap and hasattr(self.session, 'pip'):
+			self.servicelist.setPlayableIgnoreService(self.session.pip.getCurrentServiceReference() or eServiceReference())
 		else:
 			service = self.session.nav.getCurrentService()
 			if service:
@@ -1490,7 +1490,7 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 		elif self.bouquet_mark_edit != OFF:
 			if not (self.bouquet_mark_edit == EDIT_ALTERNATIVES and ref.flags & eServiceReference.isGroup):
 				self.doMark()
-		elif not (ref.flags & eServiceReference.isMarker or ref.toString().startswith("-1")):
+		elif not (ref.flags & eServiceReference.isMarker or ref.type == -1):
 			root = self.getRoot()
 			if not root or not (root.flags & eServiceReference.isGroup):
 				self.zap(enable_pipzap = doClose, preview_zap = not doClose)
@@ -1547,8 +1547,8 @@ class ChannelSelection(ChannelSelectionBase, ChannelSelectionEdit, ChannelSelect
 			if ref is None or ref != nref:
 				nref = self.session.pip.resolveAlternatePipService(nref)
 				if nref and (not checkParentalControl or Components.ParentalControl.parentalControl.isServicePlayable(nref, boundFunction(self.zap, enable_pipzap=True, checkParentalControl=False))):
-					if self.session.pip.playService(nref):
-						self.__evServiceStart()
+					self.session.pip.playService(nref)
+					self.__evServiceStart()
 				else:
 					self.setStartRoot(self.curRoot)
 					self.setCurrentSelection(ref)

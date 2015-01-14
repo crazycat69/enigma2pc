@@ -220,6 +220,19 @@ xineplug_vo_out_macosx_la_LINK = $(LIBTOOL) $(AM_V_lt) \
 	$(xineplug_vo_out_macosx_la_LDFLAGS) $(LDFLAGS) -o $@
 @ENABLE_MACOSX_VIDEO_TRUE@am_xineplug_vo_out_macosx_la_rpath = -rpath \
 @ENABLE_MACOSX_VIDEO_TRUE@	$(xineplugdir)
+xineplug_vo_out_mmal_la_DEPENDENCIES = $(XINE_LIB) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am_xineplug_vo_out_mmal_la_OBJECTS =  \
+	xineplug_vo_out_mmal_la-video_out_mmal.lo
+xineplug_vo_out_mmal_la_OBJECTS =  \
+	$(am_xineplug_vo_out_mmal_la_OBJECTS)
+xineplug_vo_out_mmal_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(xineplug_vo_out_mmal_la_CFLAGS) $(CFLAGS) \
+	$(xineplug_vo_out_mmal_la_LDFLAGS) $(LDFLAGS) -o $@
+@ENABLE_MMAL_TRUE@am_xineplug_vo_out_mmal_la_rpath = -rpath \
+@ENABLE_MMAL_TRUE@	$(xineplugdir)
 xineplug_vo_out_none_la_DEPENDENCIES = $(XINE_LIB) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_xineplug_vo_out_none_la_OBJECTS = video_out_none.lo
@@ -242,10 +255,10 @@ xineplug_vo_out_opengl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(LDFLAGS) -o $@
 @ENABLE_OPENGL_TRUE@@HAVE_X11_TRUE@am_xineplug_vo_out_opengl_la_rpath =  \
 @ENABLE_OPENGL_TRUE@@HAVE_X11_TRUE@	-rpath $(xineplugdir)
-xineplug_vo_out_opengl2_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
+xineplug_vo_out_opengl2_la_DEPENDENCIES = $(XINE_LIB) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_xineplug_vo_out_opengl2_la_OBJECTS =  \
 	xineplug_vo_out_opengl2_la-video_out_opengl2.lo
 xineplug_vo_out_opengl2_la_OBJECTS =  \
@@ -316,10 +329,11 @@ xineplug_vo_out_stk_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(LDFLAGS) -o $@
 @ENABLE_STK_TRUE@am_xineplug_vo_out_stk_la_rpath = -rpath \
 @ENABLE_STK_TRUE@	$(xineplugdir)
-xineplug_vo_out_vaapi_la_DEPENDENCIES = $(am__DEPENDENCIES_2) \
-	$(XINE_LIB) $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+xineplug_vo_out_vaapi_la_DEPENDENCIES = $(XINE_LIB) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am__xineplug_vo_out_vaapi_la_SOURCES_DIST = x11osd.c video_out_vaapi.c
 @HAVE_X11_TRUE@am__objects_2 = xineplug_vo_out_vaapi_la-x11osd.lo
 am_xineplug_vo_out_vaapi_la_OBJECTS = $(am__objects_2) \
@@ -335,7 +349,7 @@ xineplug_vo_out_vaapi_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 xineplug_vo_out_vdpau_la_DEPENDENCIES = $(XINE_LIB) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 am_xineplug_vo_out_vdpau_la_OBJECTS =  \
 	xineplug_vo_out_vdpau_la-video_out_vdpau.lo
 xineplug_vo_out_vdpau_la_OBJECTS =  \
@@ -530,6 +544,7 @@ SOURCES = $(libyuv2rgb_la_SOURCES) $(xineplug_vo_out_aa_la_SOURCES) \
 	$(xineplug_vo_out_directx_la_SOURCES) \
 	$(xineplug_vo_out_fb_la_SOURCES) \
 	$(xineplug_vo_out_macosx_la_SOURCES) \
+	$(xineplug_vo_out_mmal_la_SOURCES) \
 	$(xineplug_vo_out_none_la_SOURCES) \
 	$(xineplug_vo_out_opengl_la_SOURCES) \
 	$(xineplug_vo_out_opengl2_la_SOURCES) \
@@ -555,6 +570,7 @@ DIST_SOURCES = $(libyuv2rgb_la_SOURCES) \
 	$(xineplug_vo_out_directx_la_SOURCES) \
 	$(xineplug_vo_out_fb_la_SOURCES) \
 	$(xineplug_vo_out_macosx_la_SOURCES) \
+	$(xineplug_vo_out_mmal_la_SOURCES) \
 	$(xineplug_vo_out_none_la_SOURCES) \
 	$(am__xineplug_vo_out_opengl_la_SOURCES_DIST) \
 	$(xineplug_vo_out_opengl2_la_SOURCES) \
@@ -794,6 +810,9 @@ MKDIR_P = @MKDIR_P@
 MKNOD = @MKNOD@
 MLIB_CFLAGS = @MLIB_CFLAGS@
 MLIB_LIBS = @MLIB_LIBS@
+MMAL_CFLAGS = @MMAL_CFLAGS@
+MMAL_LDFLAGS = @MMAL_LDFLAGS@
+MMAL_LIBS = @MMAL_LIBS@
 MNG_LIBS = @MNG_LIBS@
 MPCDEC_CFLAGS = @MPCDEC_CFLAGS@
 MPCDEC_DEPS = @MPCDEC_DEPS@
@@ -817,6 +836,7 @@ OBJEXT = @OBJEXT@
 OPENGL_CFLAGS = @OPENGL_CFLAGS@
 OPENGL_LIBS = @OPENGL_LIBS@
 OPTIPNG = @OPTIPNG@
+OSS_LIBS = @OSS_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -871,6 +891,7 @@ WAND_CFLAGS = @WAND_CFLAGS@
 WAND_LIBS = @WAND_LIBS@
 WAVPACK_CFLAGS = @WAVPACK_CFLAGS@
 WAVPACK_LIBS = @WAVPACK_LIBS@
+WINE_LIBS = @WINE_LIBS@
 XCBSHM_CFLAGS = @XCBSHM_CFLAGS@
 XCBSHM_LIBS = @XCBSHM_LIBS@
 XCBXV_CFLAGS = @XCBXV_CFLAGS@
@@ -1009,6 +1030,7 @@ noinst_HEADERS = yuv2rgb.h x11osd.h xcbosd.h xv_common.h
 @ENABLE_DIRECTFB_TRUE@directfb_module = xineplug_vo_out_directfb.la \
 @ENABLE_DIRECTFB_TRUE@	$(am__append_2)
 @ENABLE_SDL_TRUE@sdl_module = xineplug_vo_out_sdl.la
+@ENABLE_MMAL_TRUE@mmal_module = xineplug_vo_out_mmal.la
 @ENABLE_STK_TRUE@stk_module = xineplug_vo_out_stk.la
 @ENABLE_DIRECTX_TRUE@directx_module = xineplug_vo_out_directx.la
 @ENABLE_MACOSX_VIDEO_TRUE@macosx_module = xineplug_vo_out_macosx.la
@@ -1035,27 +1057,28 @@ xineplug_LTLIBRARIES = $(xshm_module) $(xv_module) $(xvmc_module) \
 		  $(xcbxv_module) \
 		  $(vdpau_module) \
 		  $(vaapi_module) \
+		  $(mmal_module) \
                   xineplug_vo_out_raw.la \
                   xineplug_vo_out_none.la
 
 xineplug_vo_out_vdpau_la_SOURCES = video_out_vdpau.c
-xineplug_vo_out_vdpau_la_LIBADD = $(XINE_LIB) $(MLIB_LIBS) $(AVUTIL_LIBS) $(PTHREAD_LIBS) $(X_LIBS) $(LTLIBINTL) $(VDPAU_LIBS) -lm
-xineplug_vo_out_vdpau_la_CFLAGS = $(VISIBILITY_FLAG) $(MLIB_CFLAGS) $(X_CFLAGS) $(VDPAU_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_vdpau_la_LIBADD = $(XINE_LIB) $(AVUTIL_LIBS) $(PTHREAD_LIBS) $(X_LIBS) $(LTLIBINTL) $(VDPAU_LIBS) -lm
+xineplug_vo_out_vdpau_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(VDPAU_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_vaapi_la_SOURCES = $(X11OSD) video_out_vaapi.c
-xineplug_vo_out_vaapi_la_LIBADD = $(YUV_LIBS) $(XINE_LIB) $(OPENGL_LIBS) $(FFMPEG_LIBS) $(AVUTIL_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL) -ldl -lGLU -lva-glx -lva-x11 -lva
-xineplug_vo_out_vaapi_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(XV_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_vaapi_la_LIBADD = $(XINE_LIB) $(OPENGL_LIBS) $(FFMPEG_LIBS) $(AVUTIL_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL) $(DYNAMIC_LD_LIBS) -lGLU -lva-glx -lva-x11 -lva
+xineplug_vo_out_vaapi_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(XV_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_xcbshm_la_SOURCES = video_out_xcbshm.c $(XCBOSD)
 xineplug_vo_out_xcbshm_la_LIBADD = $(YUV_LIBS) $(PTHREAD_LIBS) $(XCB_LIBS) $(XCBSHM_LIBS) $(LTLIBINTL)
-xineplug_vo_out_xcbshm_la_CFLAGS = $(AM_CFLAGS) $(XCB_CFLAGS) $(XCBSHM_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_xcbshm_la_CFLAGS = $(AM_CFLAGS) $(XCB_CFLAGS) $(XCBSHM_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_xcbxv_la_SOURCES = video_out_xcbxv.c $(XCBOSD)
 xineplug_vo_out_xcbxv_la_LIBADD = $(XINE_LIB) $(PTHREAD_LIBS) $(LTLIBINTL) $(XCBXV_LIBS) $(XCB_LIBS)
-xineplug_vo_out_xcbxv_la_CFLAGS = $(AM_CFLAGS) $(XCB_CFLAGS) $(XCBXV_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_xcbxv_la_CFLAGS = $(AM_CFLAGS) $(XCB_CFLAGS) $(XCBXV_CFLAGS)
 xineplug_vo_out_xshm_la_SOURCES = video_out_xshm.c $(X11OSD)
 xineplug_vo_out_xshm_la_LIBADD = $(YUV_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
-xineplug_vo_out_xshm_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_xshm_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_xv_la_SOURCES = $(X11OSD) video_out_xv.c
 xineplug_vo_out_xv_la_LIBADD = $(XINE_LIB) $(XV_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
-xineplug_vo_out_xv_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(XV_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_xv_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(XV_CFLAGS)
 xineplug_vo_out_xvmc_la_SOURCES = video_out_xvmc.c
 xineplug_vo_out_xvmc_la_LIBADD = $(XINE_LIB) $(XVMC_LIBS) $(XV_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
 xineplug_vo_out_xvmc_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(XV_CFLAGS) -fno-strict-aliasing
@@ -1068,10 +1091,10 @@ xineplug_vo_out_opengl_la_SOURCES = video_out_opengl.c myglext.h $(X11OSD)
 xineplug_vo_out_opengl_la_LIBADD = $(YUV_LIBS) $(OPENGL_LIBS) $(GLUT_LIBS) \
 	$(GLUT_LIBS) $(GLU_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(DYNAMIC_LD_LIBS) $(LTLIBINTL)
 
-xineplug_vo_out_opengl_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_opengl_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_opengl2_la_SOURCES = video_out_opengl2.c
-xineplug_vo_out_opengl2_la_LIBADD = $(YUV_LIBS) $(OPENGL_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(DYNAMIC_LD_LIBS) $(LTLIBINTL)
-xineplug_vo_out_opengl2_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_opengl2_la_LIBADD = $(XINE_LIB) $(AVUTIL_LIBS) $(OPENGL_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(DYNAMIC_LD_LIBS) $(LTLIBINTL)
+xineplug_vo_out_opengl2_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_pgx64_la_SOURCES = video_out_pgx64.c
 xineplug_vo_out_pgx64_la_LIBADD = $(XINE_LIB) $(X_LIBS) $(SUNDGA_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
 xineplug_vo_out_pgx64_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS)
@@ -1106,6 +1129,10 @@ xineplug_vo_out_xdirectfb_la_CFLAGS = $(AM_CFLAGS) $(DIRECTFB_CFLAGS) -fno-stric
 xineplug_vo_out_sdl_la_SOURCES = video_out_sdl.c
 xineplug_vo_out_sdl_la_LIBADD = $(XINE_LIB) $(SDL_LIBS) $(X_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
 xineplug_vo_out_sdl_la_CFLAGS = $(AM_CFLAGS) $(X_CFLAGS) $(SDL_CFLAGS)
+xineplug_vo_out_mmal_la_SOURCES = video_out_mmal.c
+xineplug_vo_out_mmal_la_LIBADD = $(XINE_LIB) $(MMAL_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
+xineplug_vo_out_mmal_la_CFLAGS = $(AM_CFLAGS) $(MMAL_CFLAGS)
+xineplug_vo_out_mmal_la_LDFLAGS = $(AM_LDFLAGS) $(MMAL_LDFLAGS)
 xineplug_vo_out_stk_la_SOURCES = video_out_stk.c
 xineplug_vo_out_stk_la_LIBADD = $(XINE_LIB) $(LIBSTK_LIBS) $(PTHREAD_LIBS)
 xineplug_vo_out_stk_la_CFLAGS = $(AM_CFLAGS) $(LIBSTK_CFLAGS)
@@ -1116,7 +1143,7 @@ xineplug_vo_out_none_la_SOURCES = video_out_none.c
 xineplug_vo_out_none_la_LIBADD = $(XINE_LIB) $(PTHREAD_LIBS) $(LTLIBINTL)
 xineplug_vo_out_raw_la_SOURCES = video_out_raw.c
 xineplug_vo_out_raw_la_LIBADD = $(YUV_LIBS) $(PTHREAD_LIBS) $(LTLIBINTL)
-xineplug_vo_out_raw_la_CFLAGS = $(AM_CFLAGS) $(AVUTIL_CFLAGS) -fno-strict-aliasing
+xineplug_vo_out_raw_la_CFLAGS = $(AM_CFLAGS) $(AVUTIL_CFLAGS)
 xineplug_vo_out_macosx_la_SOURCES = video_out_macosx.m
 xineplug_vo_out_macosx_la_LIBADD = $(XINE_LIB) $(PTHREAD_LIBS)
 xineplug_vo_out_macosx_la_LDFLAGS = $(AM_LDFLAGS) -framework Cocoa -framework OpenGL
@@ -1223,6 +1250,9 @@ xineplug_vo_out_fb.la: $(xineplug_vo_out_fb_la_OBJECTS) $(xineplug_vo_out_fb_la_
 xineplug_vo_out_macosx.la: $(xineplug_vo_out_macosx_la_OBJECTS) $(xineplug_vo_out_macosx_la_DEPENDENCIES) $(EXTRA_xineplug_vo_out_macosx_la_DEPENDENCIES) 
 	$(AM_V_OBJCLD)$(xineplug_vo_out_macosx_la_LINK) $(am_xineplug_vo_out_macosx_la_rpath) $(xineplug_vo_out_macosx_la_OBJECTS) $(xineplug_vo_out_macosx_la_LIBADD) $(LIBS)
 
+xineplug_vo_out_mmal.la: $(xineplug_vo_out_mmal_la_OBJECTS) $(xineplug_vo_out_mmal_la_DEPENDENCIES) $(EXTRA_xineplug_vo_out_mmal_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(xineplug_vo_out_mmal_la_LINK) $(am_xineplug_vo_out_mmal_la_rpath) $(xineplug_vo_out_mmal_la_OBJECTS) $(xineplug_vo_out_mmal_la_LIBADD) $(LIBS)
+
 xineplug_vo_out_none.la: $(xineplug_vo_out_none_la_OBJECTS) $(xineplug_vo_out_none_la_DEPENDENCIES) $(EXTRA_xineplug_vo_out_none_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) -rpath $(xineplugdir) $(xineplug_vo_out_none_la_OBJECTS) $(xineplug_vo_out_none_la_LIBADD) $(LIBS)
 
@@ -1293,6 +1323,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_directfb_la-video_out_directfb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_directx_la-video_out_directx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_fb_la-video_out_fb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_mmal_la-video_out_mmal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_opengl2_la-video_out_opengl2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_opengl_la-video_out_opengl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_vo_out_opengl_la-x11osd.Plo@am__quote@
@@ -1398,6 +1429,13 @@ xineplug_vo_out_fb_la-video_out_fb.lo: video_out_fb.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='video_out_fb.c' object='xineplug_vo_out_fb_la-video_out_fb.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_vo_out_fb_la_CFLAGS) $(CFLAGS) -c -o xineplug_vo_out_fb_la-video_out_fb.lo `test -f 'video_out_fb.c' || echo '$(srcdir)/'`video_out_fb.c
+
+xineplug_vo_out_mmal_la-video_out_mmal.lo: video_out_mmal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_vo_out_mmal_la_CFLAGS) $(CFLAGS) -MT xineplug_vo_out_mmal_la-video_out_mmal.lo -MD -MP -MF $(DEPDIR)/xineplug_vo_out_mmal_la-video_out_mmal.Tpo -c -o xineplug_vo_out_mmal_la-video_out_mmal.lo `test -f 'video_out_mmal.c' || echo '$(srcdir)/'`video_out_mmal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xineplug_vo_out_mmal_la-video_out_mmal.Tpo $(DEPDIR)/xineplug_vo_out_mmal_la-video_out_mmal.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='video_out_mmal.c' object='xineplug_vo_out_mmal_la-video_out_mmal.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_vo_out_mmal_la_CFLAGS) $(CFLAGS) -c -o xineplug_vo_out_mmal_la-video_out_mmal.lo `test -f 'video_out_mmal.c' || echo '$(srcdir)/'`video_out_mmal.c
 
 xineplug_vo_out_opengl_la-video_out_opengl.lo: video_out_opengl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_vo_out_opengl_la_CFLAGS) $(CFLAGS) -MT xineplug_vo_out_opengl_la-video_out_opengl.lo -MD -MP -MF $(DEPDIR)/xineplug_vo_out_opengl_la-video_out_opengl.Tpo -c -o xineplug_vo_out_opengl_la-video_out_opengl.lo `test -f 'video_out_opengl.c' || echo '$(srcdir)/'`video_out_opengl.c

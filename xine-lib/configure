@@ -670,6 +670,11 @@ xinedatadir
 xinelibdir
 BUILD_DMX_IMAGE_FALSE
 BUILD_DMX_IMAGE_TRUE
+ENABLE_MMAL_FALSE
+ENABLE_MMAL_TRUE
+MMAL_CFLAGS
+MMAL_LDFLAGS
+MMAL_LIBS
 ENABLE_VPX_FALSE
 ENABLE_VPX_TRUE
 VPX_LIBS
@@ -921,6 +926,7 @@ ENABLE_PULSEAUDIO_FALSE
 ENABLE_PULSEAUDIO_TRUE
 PULSEAUDIO_LIBS
 PULSEAUDIO_CFLAGS
+OSS_LIBS
 ENABLE_OSS_FALSE
 ENABLE_OSS_TRUE
 ENABLE_JACK_FALSE
@@ -998,6 +1004,7 @@ ZLIB_LIBS
 ZLIB_CPPFLAGS
 KSTAT_LIBS
 RT_LIBS
+WINE_LIBS
 NET_LIBS
 EXTERNAL_LIBXDG_BASEDIR_FALSE
 EXTERNAL_LIBXDG_BASEDIR_TRUE
@@ -1282,6 +1289,7 @@ enable_w32dll
 with_w32_path
 with_wavpack
 enable_vpx
+enable_mmal
 '
       ac_precious_vars='build_alias
 host_alias
@@ -2095,6 +2103,8 @@ Optional Features:
   --enable-w32dll         Enable Win32 DLL support (default: enabled)
   --enable-vpx            Enable libvpx VP8/VP9 decoder support (default:
                           enabled)
+  --enable-mmal           Enable libmmal HW decoder and video output plugin
+                          for Raspberry Pi (default: enabled)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -17196,6 +17206,49 @@ fi
 
 
 
+WINE_LIBS=""
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for i386_set_ldt in -li386" >&5
+$as_echo_n "checking for i386_set_ldt in -li386... " >&6; }
+if ${ac_cv_lib_i386_i386_set_ldt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-li386  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char i386_set_ldt ();
+int
+main ()
+{
+return i386_set_ldt ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_i386_i386_set_ldt=yes
+else
+  ac_cv_lib_i386_i386_set_ldt=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_i386_i386_set_ldt" >&5
+$as_echo "$ac_cv_lib_i386_i386_set_ldt" >&6; }
+if test "x$ac_cv_lib_i386_i386_set_ldt" = xyes; then :
+  WINE_LIBS="-li386 $WINE_LIBS"
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clock_getres in -lrt" >&5
 $as_echo_n "checking for clock_getres in -lrt... " >&6; }
 if ${ac_cv_lib_rt_clock_getres+:} false; then :
@@ -17815,6 +17868,18 @@ fi
 
 done
 
+
+for ac_header in dev/dtv/dtvio.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "dev/dtv/dtvio.h" "ac_cv_header_dev_dtv_dtvio_h" "$ac_includes_default"
+if test "x$ac_cv_header_dev_dtv_dtvio_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_DEV_DTV_DTVIO_H 1
+_ACEOF
+
+fi
+
+done
 
 
 
@@ -23391,6 +23456,16 @@ else
 fi
 
     if test x"$enable_oss" != x"no"; then
+
+   case "$host" in
+     *-*-netbsd*)
+       OSS_LIBS="-lossaudio"
+       ;;
+     *)
+       OSS_LIBS=""
+       ;;
+   esac
+
         for ac_header in sys/soundcard.h machine/soundcard.h soundcard.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -23404,7 +23479,10 @@ fi
 
 done
 
-        ac_fn_c_check_decl "$LINENO" "SNDCTL_DSP_SETFRAGMENT" "ac_cv_have_decl_SNDCTL_DSP_SETFRAGMENT" "#ifdef HAVE_SYS_SOUNDCARD_H
+        ac_fn_c_check_decl "$LINENO" "SNDCTL_DSP_SETFRAGMENT" "ac_cv_have_decl_SNDCTL_DSP_SETFRAGMENT" "#ifdef __NetBSD__
+                       #include <sys/ioctl.h>
+                       #endif
+                       #ifdef HAVE_SYS_SOUNDCARD_H
                        # include <sys/soundcard.h>
                        #endif
                        #ifdef HAVE_MACHINE_SOUNDCARD_H
@@ -23431,6 +23509,7 @@ else
   ENABLE_OSS_TRUE='#'
   ENABLE_OSS_FALSE=
 fi
+
 
 
 
@@ -30346,6 +30425,105 @@ else
 fi
 
 
+        # Check whether --enable-mmal was given.
+if test "${enable_mmal+set}" = set; then :
+  enableval=$enable_mmal; test x"$enableval" != x"no" && enable_mmal="yes"
+fi
+
+    if test x"$enable_mmal" != "no"; then
+        saved_CPPFLAGS="$CPPFLAGS"
+        saved_LDFLAGS="$LDFLAGS"
+        LDFLAGS="${LDFLAGS} -L/opt/vc/lib"
+        CPPFLAGS="${CPPFLAGS} -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads"
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for bcm_host_init in -lbcm_host" >&5
+$as_echo_n "checking for bcm_host_init in -lbcm_host... " >&6; }
+if ${ac_cv_lib_bcm_host_bcm_host_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lbcm_host  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char bcm_host_init ();
+int
+main ()
+{
+return bcm_host_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_bcm_host_bcm_host_init=yes
+else
+  ac_cv_lib_bcm_host_bcm_host_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bcm_host_bcm_host_init" >&5
+$as_echo "$ac_cv_lib_bcm_host_bcm_host_init" >&6; }
+if test "x$ac_cv_lib_bcm_host_bcm_host_init" = xyes; then :
+  have_mmal=yes
+else
+  have_mmal=no
+fi
+
+        if test x"$enable_mmal" = x"yes" && test x"$have_mmal" != x"yes"; then
+            as_fn_error $? "Cannot find bcm library" "$LINENO" 5
+        else
+            for ac_header in interface/mmal/mmal.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "interface/mmal/mmal.h" "ac_cv_header_interface_mmal_mmal_h" "$ac_includes_default"
+if test "x$ac_cv_header_interface_mmal_mmal_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_INTERFACE_MMAL_MMAL_H 1
+_ACEOF
+ have_mmal=yes
+else
+  have_mmal=no
+fi
+
+done
+
+            if test x"$enable_mmal" = x"yes" && test x"$have_mmal" != x"yes"; then
+                as_fn_error $? "Cannot find MMAL headers" "$LINENO" 5
+            fi
+        fi
+
+        if test x"$have_mmal" = x"yes"; then
+            MMAL_LIBS="-lbcm_host -lmmal -lmmal_core -lmmal_util"
+            MMAL_LDFLAGS="-L/opt/vc/lib"
+            MMAL_CFLAGS="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"
+
+
+
+
+$as_echo "#define HAVE_MMAL 1" >>confdefs.h
+
+        fi
+
+        CPPFLAGS="$saved_CPPFLAGS"
+        LDFLAGS="$saved_LDFLAGS"
+    fi
+     if test x"$have_mmal" = x"yes"; then
+  ENABLE_MMAL_TRUE=
+  ENABLE_MMAL_FALSE='#'
+else
+  ENABLE_MMAL_TRUE='#'
+  ENABLE_MMAL_FALSE=
+fi
+
+
          if test x"$have_imagemagick" = x"yes" -o x"$have_gdkpixbuf" = x"yes"; then
   BUILD_DMX_IMAGE_TRUE=
   BUILD_DMX_IMAGE_FALSE='#'
@@ -31658,6 +31836,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_VPX_TRUE}" && test -z "${ENABLE_VPX_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_VPX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_MMAL_TRUE}" && test -z "${ENABLE_MMAL_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_MMAL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_DMX_IMAGE_TRUE}" && test -z "${BUILD_DMX_IMAGE_FALSE}"; then
@@ -34220,6 +34402,7 @@ chmod +x libtool
     test x"$have_theora" = x"yes"      && echo "   - theora"
     test x"$have_w32dll" = x"yes"      && echo "   - w32dll"
     test x"$have_vdpau" = x"yes"       && echo "   - vdpau"
+    test x"$have_mmal" = x"yes"        && echo "   - mmal (Broadcom HW)"
     test x"$have_vpx" = x"yes"         && echo "   - libvpx (VP8/VP9)"
     if test x"$with_external_ffmpeg" != x"no"; then
         echo "   - ffmpeg (external library)"
@@ -34372,6 +34555,7 @@ chmod +x libtool
     test x"$have_libstk" = x"yes"       && echo "   - stk (Libstk Set-top Toolkit)"
     test x"$have_macosx_video" = x"yes" && echo "   - Mac OS X OpenGL"
     test x"$have_sdl" = x"yes"          && echo "   - sdl (Simple DirectMedia Layer)"
+    test x"$have_mmal" = x"yes"         && echo "   - mmal (Broadcom MultiMedia Abstraction Layer)"
 
 
     if test x"$have_dxr3" = x"yes"; then

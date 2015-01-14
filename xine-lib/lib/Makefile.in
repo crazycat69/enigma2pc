@@ -81,10 +81,10 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/misc/Makefile.quiet \
 	$(top_srcdir)/misc/Makefile.common $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.am strpbrk.c strsep.c hstrerror.c \
-	asprintf.c strndup.c strcasestr.c timedlock.c dirent_msvc.c \
-	strtok_r.c timegm.c gettimeofday.c setenv.c memmem.c \
-	unsetenv.c basename.c $(top_srcdir)/depcomp $(noinst_HEADERS)
+	$(srcdir)/Makefile.am gettimeofday.c unsetenv.c setenv.c \
+	basename.c hstrerror.c dirent_msvc.c strtok_r.c asprintf.c \
+	strpbrk.c timedlock.c strsep.c strndup.c strcasestr.c memmem.c \
+	timegm.c $(top_srcdir)/depcomp $(noinst_HEADERS)
 subdir = lib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/attributes.m4 \
@@ -334,6 +334,9 @@ MKDIR_P = @MKDIR_P@
 MKNOD = @MKNOD@
 MLIB_CFLAGS = @MLIB_CFLAGS@
 MLIB_LIBS = @MLIB_LIBS@
+MMAL_CFLAGS = @MMAL_CFLAGS@
+MMAL_LDFLAGS = @MMAL_LDFLAGS@
+MMAL_LIBS = @MMAL_LIBS@
 MNG_LIBS = @MNG_LIBS@
 MPCDEC_CFLAGS = @MPCDEC_CFLAGS@
 MPCDEC_DEPS = @MPCDEC_DEPS@
@@ -357,6 +360,7 @@ OBJEXT = @OBJEXT@
 OPENGL_CFLAGS = @OPENGL_CFLAGS@
 OPENGL_LIBS = @OPENGL_LIBS@
 OPTIPNG = @OPTIPNG@
+OSS_LIBS = @OSS_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -411,6 +415,7 @@ WAND_CFLAGS = @WAND_CFLAGS@
 WAND_LIBS = @WAND_LIBS@
 WAVPACK_CFLAGS = @WAVPACK_CFLAGS@
 WAVPACK_LIBS = @WAVPACK_LIBS@
+WINE_LIBS = @WINE_LIBS@
 XCBSHM_CFLAGS = @XCBSHM_CFLAGS@
 XCBSHM_LIBS = @XCBSHM_LIBS@
 XCBXV_CFLAGS = @XCBXV_CFLAGS@

@@ -12,6 +12,7 @@ from Components.Sources.Boolean import Boolean
 from Components.config import config, ConfigBoolean, ConfigClock
 from Components.SystemInfo import SystemInfo
 from Components.UsageConfig import preferredInstantRecordPath, defaultMoviePath, ConfigSelection
+from Components.Sources.StaticText import StaticText
 from EpgSelection import EPGSelection
 from Plugins.Plugin import PluginDescriptor
 
@@ -174,17 +175,17 @@ class InfoBarScreenSaver:
 		self.screensaver.hide()
 
 	def __onExecBegin(self):
+		eActionMap.getInstance().bindAction('', -maxint - 1, self.keypressScreenSaver)
 		self.ScreenSaverTimerStart()
 
 	def __onExecEnd(self):
-		if self.screensaver.shown:
-			self.screensaver.hide()
-			eActionMap.getInstance().unbindAction('', self.keypressScreenSaver)
 		self.screenSaverTimer.stop()
+		self.screensaver.hide()
+		eActionMap.getInstance().unbindAction('', self.keypressScreenSaver)
 
 	def ScreenSaverTimerStart(self):
 		time = int(config.usage.screen_saver.value)
-		flag = self.seekstate[0]
+		flag = hasattr(self, "seekstate") and self.seekstate[0]
 		if not flag:
 			ref = self.session.nav.getCurrentlyPlayingServiceOrGroup()
 			if ref:
@@ -201,14 +202,13 @@ class InfoBarScreenSaver:
 			if hasattr(self, "pvrStateDialog"):
 				self.pvrStateDialog.hide()
 			self.screensaver.show()
-			eActionMap.getInstance().bindAction('', -maxint - 1, self.keypressScreenSaver)
 
 	def keypressScreenSaver(self, key, flag):
 		if flag:
-			self.screensaver.hide()
-			self.show()
+			if self.screensaver.shown:
+				self.screensaver.hide()
+				self.show()
 			self.ScreenSaverTimerStart()
-			eActionMap.getInstance().unbindAction('', self.keypressScreenSaver)
 
 class SecondInfoBar(Screen):
 
@@ -363,7 +363,7 @@ class NumberZap(Screen):
 	def handleServiceName(self):
 		if self.searchNumber:
 			self.service, self.bouquet = self.searchNumber(int(self["number"].getText()))
-			self ["servicename"].text = ServiceReference(self.service).getServiceName()
+			self["servicename"].text = self["servicename_summary"].text = ServiceReference(self.service).getServiceName()
 			if not self.startBouquet:
 				self.startBouquet = self.bouquet
 
@@ -374,27 +374,33 @@ class NumberZap(Screen):
 				self.service, self.bouquet = self.searchNumber(int(self["number"].getText()), firstBouquetOnly = True)
 			else:
 				self.service, self.bouquet = self.searchNumber(int(self["number"].getText()))
-			self ["servicename"].text = ServiceReference(self.service).getServiceName()
+			self["servicename"].text = self["servicename_summary"].text = ServiceReference(self.service).getServiceName()
 
 	def keyNumberGlobal(self, number):
-		self.Timer.start(3000, True)
-		self.field = self.field + str(number)
-		self["number"].setText(self.field)
+		self.Timer.start(1000, True)
+		self.numberString = self.numberString + str(number)
+		self["number"].text = self["number_summary"].text = self.numberString
 
 		self.handleServiceName()
 
-		if len(self.field) >= 5:
+		if len(self.numberString) >= 5:
 			self.keyOK()
+		for x in self.onChanged:
+			x()
 
 	def __init__(self, session, number, searchNumberFunction = None):
 		Screen.__init__(self, session)
-		self.field = str(number)
+		self.numberString = str(number)
 		self.searchNumber = searchNumberFunction
 		self.startBouquet = None
+		self.onChanged = []
 
-		self["channel"] = Label(_("Channel:"))
-		self["number"] = Label(self.field)
-		self["servicename"] = Label()
+		self["channel"] = StaticText(_("Channel:"))
+		self["number"] = Label(self.numberString)
+		self["servicename"] = StaticText()
+		self["channel_summary"] = StaticText(_("Channel:"))
+		self["number_summary"] = StaticText(self.numberString)
+		self["servicename_summary"] = StaticText()
 
 		self.handleServiceName()
 
@@ -440,14 +446,18 @@ class InfoBarNumberZap:
 		if number == 0:
 			if isinstance(self, InfoBarPiP) and self.pipHandles0Action():
 				self.pipDoHandle0Action()
-			else:
-				self.servicelist.recallPrevService()
+			elif len(self.servicelist.history) > 1:
+				self.checkTimeshiftRunning(self.recallPrevService)
 		else:
 			if self.has_key("TimeshiftActions") and self.timeshiftEnabled():
 				ts = self.getTimeshift()
 				if ts and ts.isTimeshiftActive():
 					return
 			self.session.openWithCallback(self.numberEntered, NumberZap, number, self.searchNumber)
+
+	def recallPrevService(self, reply):
+		if reply:
+			self.servicelist.recallPrevService()
 
 	def numberEntered(self, service = None, bouquet = None):
 		if service:
@@ -741,7 +751,8 @@ class InfoBarEPG:
 			})
 
 	def getEPGPluginList(self, getAll=False):
-		pluginlist = [(p.name, boundFunction(self.runPlugin, p)) for p in plugins.getPlugins(where = PluginDescriptor.WHERE_EVENTINFO)]
+		pluginlist = [(p.name, boundFunction(self.runPlugin, p)) for p in plugins.getPlugins(where = PluginDescriptor.WHERE_EVENTINFO) \
+				if 'selectedevent' not in p.__call__.func_code.co_varnames]
 		if pluginlist:
 			from Components.ServiceEventTracker import InfoBarCount
 			if getAll or InfoBarCount == 1:
@@ -1807,7 +1818,6 @@ class InfoBarExtensions:
 				for y in x[1]():
 					self.updateExtension(y[0], y[1])
 
-
 	def showExtensionSelection(self):
 		self.updateExtensions()
 		extensionsList = self.extensionsList[:]
@@ -1889,13 +1899,13 @@ class InfoBarPiP:
 		if SystemInfo.get("NumVideoDecoders", 1) > 1:
 			self["PiPActions"] = HelpableActionMap(self, "InfobarPiPActions",
 				{
-					"activatePiP": (self.showPiP, _("Activate PiP")),
+					"activatePiP": (self.activePiP, _("Activate PiP")),
 				})
 			if (self.allowPiP):
 				self.addExtension((self.getShowHideName, self.showPiP, lambda: True), "blue")
 				self.addExtension((self.getMoveName, self.movePiP, self.pipShown), "green")
 				self.addExtension((self.getSwapName, self.swapPiP, self.pipShown), "yellow")
-				self.addExtension((self.getTogglePipzapName, self.togglePipzap, self.pipShown), "red")
+				self.addExtension((self.getTogglePipzapName, self.togglePipzap, lambda: True), "red")
 			else:
 				self.addExtension((self.getShowHideName, self.showPiP, self.pipShown), "blue")
 				self.addExtension((self.getMoveName, self.movePiP, self.pipShown), "green")
@@ -1924,7 +1934,6 @@ class InfoBarPiP:
 			return _("Zap focus to main screen")
 		return _("Zap focus to Picture in Picture")
 
-
 	def togglePipzap(self):
 		if not self.session.pipshown:
 			self.showPiP()
@@ -1932,7 +1941,7 @@ class InfoBarPiP:
 		if slist and self.session.pipshown:
 			slist.togglePipzap()
 			if slist.dopipzap:
-				currentServicePath = self.servicelist.getCurrentServicePath()
+				currentServicePath = slist.getCurrentServicePath()
 				self.servicelist.setCurrentServicePath(self.session.pip.servicePath, doZap=False)
 				self.session.pip.servicePath = currentServicePath
 
@@ -1954,6 +1963,12 @@ class InfoBarPiP:
 			else:
 				self.session.pipshown = False
 				del self.session.pip
+
+	def activePiP(self):
+		if self.session.pipshown:
+			self.togglePipzap()
+		else:
+			self.showPiP()
 
 	def swapPiP(self):
 		swapservice = self.session.nav.getCurrentlyPlayingServiceOrGroup()
@@ -2927,7 +2942,7 @@ class InfoBarPowersaver:
 	def inactivityTimeout(self):
 		if config.usage.inactivity_timer_blocktime.value:
 			curtime = localtime(time())
-			if curtime.tm_year != 1970: #check if the current time is valid
+			if curtime.tm_year > 1970: #check if the current time is valid
 				curtime = (curtime.tm_hour, curtime.tm_min, curtime.tm_sec)
 				begintime = tuple(config.usage.inactivity_timer_blocktime_begin.value)
 				endtime = tuple(config.usage.inactivity_timer_blocktime_end.value)

@@ -182,6 +182,18 @@ xineplug_decode_libjpeg_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(LDFLAGS) -o $@
 @ENABLE_LIBJPEG_TRUE@am_xineplug_decode_libjpeg_la_rpath = -rpath \
 @ENABLE_LIBJPEG_TRUE@	$(xineplugdir)
+xineplug_decode_libmmal_la_DEPENDENCIES = $(XINE_LIB) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_xineplug_decode_libmmal_la_OBJECTS =  \
+	xineplug_decode_libmmal_la-mmal.lo
+xineplug_decode_libmmal_la_OBJECTS =  \
+	$(am_xineplug_decode_libmmal_la_OBJECTS)
+xineplug_decode_libmmal_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(xineplug_decode_libmmal_la_CFLAGS) $(CFLAGS) \
+	$(xineplug_decode_libmmal_la_LDFLAGS) $(LDFLAGS) -o $@
+@ENABLE_MMAL_TRUE@am_xineplug_decode_libmmal_la_rpath = -rpath \
+@ENABLE_MMAL_TRUE@	$(xineplugdir)
 xineplug_decode_libvpx_la_DEPENDENCIES = $(XINE_LIB) \
 	$(am__DEPENDENCIES_1)
 am_xineplug_decode_libvpx_la_OBJECTS =  \
@@ -238,6 +250,7 @@ SOURCES = $(xineplug_decode_bitplane_la_SOURCES) \
 	$(xineplug_decode_gdk_pixbuf_la_SOURCES) \
 	$(xineplug_decode_image_la_SOURCES) \
 	$(xineplug_decode_libjpeg_la_SOURCES) \
+	$(xineplug_decode_libmmal_la_SOURCES) \
 	$(xineplug_decode_libvpx_la_SOURCES) \
 	$(xineplug_decode_rgb_la_SOURCES) \
 	$(xineplug_decode_yuv_la_SOURCES)
@@ -245,6 +258,7 @@ DIST_SOURCES = $(xineplug_decode_bitplane_la_SOURCES) \
 	$(xineplug_decode_gdk_pixbuf_la_SOURCES) \
 	$(xineplug_decode_image_la_SOURCES) \
 	$(xineplug_decode_libjpeg_la_SOURCES) \
+	$(xineplug_decode_libmmal_la_SOURCES) \
 	$(xineplug_decode_libvpx_la_SOURCES) \
 	$(xineplug_decode_rgb_la_SOURCES) \
 	$(xineplug_decode_yuv_la_SOURCES)
@@ -468,6 +482,9 @@ MKDIR_P = @MKDIR_P@
 MKNOD = @MKNOD@
 MLIB_CFLAGS = @MLIB_CFLAGS@
 MLIB_LIBS = @MLIB_LIBS@
+MMAL_CFLAGS = @MMAL_CFLAGS@
+MMAL_LDFLAGS = @MMAL_LDFLAGS@
+MMAL_LIBS = @MMAL_LIBS@
 MNG_LIBS = @MNG_LIBS@
 MPCDEC_CFLAGS = @MPCDEC_CFLAGS@
 MPCDEC_DEPS = @MPCDEC_DEPS@
@@ -491,6 +508,7 @@ OBJEXT = @OBJEXT@
 OPENGL_CFLAGS = @OPENGL_CFLAGS@
 OPENGL_LIBS = @OPENGL_LIBS@
 OPTIPNG = @OPTIPNG@
+OSS_LIBS = @OSS_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -545,6 +563,7 @@ WAND_CFLAGS = @WAND_CFLAGS@
 WAND_LIBS = @WAND_LIBS@
 WAVPACK_CFLAGS = @WAVPACK_CFLAGS@
 WAVPACK_LIBS = @WAVPACK_LIBS@
+WINE_LIBS = @WINE_LIBS@
 XCBSHM_CFLAGS = @XCBSHM_CFLAGS@
 XCBSHM_LIBS = @XCBSHM_LIBS@
 XCBXV_CFLAGS = @XCBXV_CFLAGS@
@@ -668,11 +687,13 @@ EXTRA_DIST = foovideo.c
 @ENABLE_GDK_PIXBUF_TRUE@gdkpixbuf_module = xineplug_decode_gdk_pixbuf.la
 @ENABLE_LIBJPEG_TRUE@libjpeg_module = xineplug_decode_libjpeg.la
 @ENABLE_VPX_TRUE@libvpx_module = xineplug_decode_libvpx.la
+@ENABLE_MMAL_TRUE@libmmal_module = xineplug_decode_libmmal.la
 xineplug_LTLIBRARIES = $(image_module) \
 	$(gdkpixbuf_module) \
 	$(libjpeg_module) \
 	$(theora_module) \
 	$(libvpx_module) \
+	$(libmmal_module) \
 	xineplug_decode_bitplane.la \
 	xineplug_decode_rgb.la \
 	xineplug_decode_yuv.la
@@ -695,6 +716,10 @@ xineplug_decode_libjpeg_la_CFLAGS = $(AM_CFLAGS) $(JPEG_CFLAGS)
 xineplug_decode_libvpx_la_SOURCES = libvpx.c
 xineplug_decode_libvpx_la_LIBADD = $(XINE_LIB) $(VPX_LIBS)
 xineplug_decode_libvpx_la_CFLAGS = $(AM_CFLAGS) $(VPX_CFLAGS)
+xineplug_decode_libmmal_la_SOURCES = mmal.c
+xineplug_decode_libmmal_la_LIBADD = $(XINE_LIB) $(PTHREAD_LIBS) $(MMAL_LIBS)
+xineplug_decode_libmmal_la_CFLAGS = $(AM_CFLAGS) $(MMAL_CFLAGS)
+xineplug_decode_libmmal_la_LDFLAGS = $(AM_LDFLAGS) $(MMAL_LDFLAGS)
 all: all-recursive
 
 .SUFFIXES:
@@ -778,6 +803,9 @@ xineplug_decode_image.la: $(xineplug_decode_image_la_OBJECTS) $(xineplug_decode_
 xineplug_decode_libjpeg.la: $(xineplug_decode_libjpeg_la_OBJECTS) $(xineplug_decode_libjpeg_la_DEPENDENCIES) $(EXTRA_xineplug_decode_libjpeg_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(xineplug_decode_libjpeg_la_LINK) $(am_xineplug_decode_libjpeg_la_rpath) $(xineplug_decode_libjpeg_la_OBJECTS) $(xineplug_decode_libjpeg_la_LIBADD) $(LIBS)
 
+xineplug_decode_libmmal.la: $(xineplug_decode_libmmal_la_OBJECTS) $(xineplug_decode_libmmal_la_DEPENDENCIES) $(EXTRA_xineplug_decode_libmmal_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(xineplug_decode_libmmal_la_LINK) $(am_xineplug_decode_libmmal_la_rpath) $(xineplug_decode_libmmal_la_OBJECTS) $(xineplug_decode_libmmal_la_LIBADD) $(LIBS)
+
 xineplug_decode_libvpx.la: $(xineplug_decode_libvpx_la_OBJECTS) $(xineplug_decode_libvpx_la_DEPENDENCIES) $(EXTRA_xineplug_decode_libvpx_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(xineplug_decode_libvpx_la_LINK) $(am_xineplug_decode_libvpx_la_rpath) $(xineplug_decode_libvpx_la_OBJECTS) $(xineplug_decode_libvpx_la_LIBADD) $(LIBS)
 
@@ -798,6 +826,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_decode_gdk_pixbuf_la-gdkpixbuf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_decode_image_la-image.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_decode_libjpeg_la-libjpeg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_decode_libmmal_la-mmal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xineplug_decode_libvpx_la-libvpx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yuv.Plo@am__quote@
 
@@ -842,6 +871,13 @@ xineplug_decode_libjpeg_la-libjpeg.lo: libjpeg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libjpeg.c' object='xineplug_decode_libjpeg_la-libjpeg.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_decode_libjpeg_la_CFLAGS) $(CFLAGS) -c -o xineplug_decode_libjpeg_la-libjpeg.lo `test -f 'libjpeg.c' || echo '$(srcdir)/'`libjpeg.c
+
+xineplug_decode_libmmal_la-mmal.lo: mmal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_decode_libmmal_la_CFLAGS) $(CFLAGS) -MT xineplug_decode_libmmal_la-mmal.lo -MD -MP -MF $(DEPDIR)/xineplug_decode_libmmal_la-mmal.Tpo -c -o xineplug_decode_libmmal_la-mmal.lo `test -f 'mmal.c' || echo '$(srcdir)/'`mmal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/xineplug_decode_libmmal_la-mmal.Tpo $(DEPDIR)/xineplug_decode_libmmal_la-mmal.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mmal.c' object='xineplug_decode_libmmal_la-mmal.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_decode_libmmal_la_CFLAGS) $(CFLAGS) -c -o xineplug_decode_libmmal_la-mmal.lo `test -f 'mmal.c' || echo '$(srcdir)/'`mmal.c
 
 xineplug_decode_libvpx_la-libvpx.lo: libvpx.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xineplug_decode_libvpx_la_CFLAGS) $(CFLAGS) -MT xineplug_decode_libvpx_la-libvpx.lo -MD -MP -MF $(DEPDIR)/xineplug_decode_libvpx_la-libvpx.Tpo -c -o xineplug_decode_libvpx_la-libvpx.lo `test -f 'libvpx.c' || echo '$(srcdir)/'`libvpx.c

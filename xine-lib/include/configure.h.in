@@ -135,6 +135,9 @@
    */
 #undef HAVE_DCGETTEXT
 
+/* Define to 1 if you have the <dev/dtv/dtvio.h> header file. */
+#undef HAVE_DEV_DTV_DTVIO_H
+
 /* Define this if you have DirectX */
 #undef HAVE_DIRECTX
 
@@ -215,6 +218,9 @@
 
 /* Define if you have the iconv() function and it works. */
 #undef HAVE_ICONV
+
+/* Define to 1 if you have the <interface/mmal/mmal.h> header file. */
+#undef HAVE_INTERFACE_MMAL_MMAL_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -320,6 +326,9 @@
 
 /* Define to 1 if you have the <mlib_video.h> header file. */
 #undef HAVE_MLIB_VIDEO_H
+
+/* Define this if you have MMAL installed */
+#undef HAVE_MMAL
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP

@@ -150,23 +150,17 @@ libxine_interface_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_CFLAGS) $(CFLAGS) $(libxine_interface_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__DEPENDENCIES_1 =
-am_libxine_la_OBJECTS = libxine_la-xine.lo libxine_la-metronom.lo \
-	libxine_la-configfile.lo libxine_la-buffer.lo \
-	libxine_la-load_plugins.lo libxine_la-video_decoder.lo \
-	libxine_la-buffer_types.lo libxine_la-audio_decoder.lo \
-	libxine_la-video_out.lo libxine_la-audio_out.lo \
-	libxine_la-resample.lo libxine_la-events.lo \
-	libxine_la-video_overlay.lo libxine_la-osd.lo \
-	libxine_la-spu.lo libxine_la-scratch.lo libxine_la-demux.lo \
-	libxine_la-vo_scale.lo libxine_la-xine_interface.lo \
-	libxine_la-post.lo libxine_la-broadcaster.lo \
-	libxine_la-io_helper.lo libxine_la-input_rip.lo \
-	libxine_la-input_cache.lo libxine_la-info_helper.lo \
-	libxine_la-refcounter.lo libxine_la-alphablend.lo
+am_libxine_la_OBJECTS = xine.lo metronom.lo configfile.lo buffer.lo \
+	load_plugins.lo video_decoder.lo buffer_types.lo \
+	audio_decoder.lo video_out.lo audio_out.lo resample.lo \
+	events.lo video_overlay.lo osd.lo spu.lo scratch.lo demux.lo \
+	vo_scale.lo xine_interface.lo post.lo broadcaster.lo \
+	io_helper.lo input_rip.lo input_cache.lo info_helper.lo \
+	refcounter.lo alphablend.lo
 libxine_la_OBJECTS = $(am_libxine_la_OBJECTS)
 libxine_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libxine_la_CFLAGS) \
-	$(CFLAGS) $(libxine_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libxine_la_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -382,6 +376,9 @@ MKDIR_P = @MKDIR_P@
 MKNOD = @MKNOD@
 MLIB_CFLAGS = @MLIB_CFLAGS@
 MLIB_LIBS = @MLIB_LIBS@
+MMAL_CFLAGS = @MMAL_CFLAGS@
+MMAL_LDFLAGS = @MMAL_LDFLAGS@
+MMAL_LIBS = @MMAL_LIBS@
 MNG_LIBS = @MNG_LIBS@
 MPCDEC_CFLAGS = @MPCDEC_CFLAGS@
 MPCDEC_DEPS = @MPCDEC_DEPS@
@@ -405,6 +402,7 @@ OBJEXT = @OBJEXT@
 OPENGL_CFLAGS = @OPENGL_CFLAGS@
 OPENGL_LIBS = @OPENGL_LIBS@
 OPTIPNG = @OPTIPNG@
+OSS_LIBS = @OSS_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -459,6 +457,7 @@ WAND_CFLAGS = @WAND_CFLAGS@
 WAND_LIBS = @WAND_LIBS@
 WAVPACK_CFLAGS = @WAVPACK_CFLAGS@
 WAVPACK_LIBS = @WAVPACK_LIBS@
+WINE_LIBS = @WINE_LIBS@
 XCBSHM_CFLAGS = @XCBSHM_CFLAGS@
 XCBSHM_LIBS = @XCBSHM_LIBS@
 XCBXV_CFLAGS = @XCBXV_CFLAGS@
@@ -601,7 +600,6 @@ libxine_la_DEPENDENCIES = $(XINEUTILS_LIB) $(YUV_LIB) $(XDG_BASEDIR_DEPS) \
                           $(pthread_dep) $(LIBXINEPOSIX) \
                           libxine-interface.la
 
-libxine_la_CFLAGS = $(AM_CFLAGS) -fno-strict-aliasing
 libxine_la_LIBADD = $(PTHREAD_LIBS) $(DYNAMIC_LD_LIBS) $(LTLIBINTL) $(ZLIB_LIBS) \
 		    -lm $(XINEUTILS_LIB) $(YUV_LIB) $(LTLIBICONV) $(FT2_LIBS) $(FONTCONFIG_LIBS) \
                     $(LIBXINEPOSIX) $(RT_LIBS) $(NET_LIBS) $(XDG_BASEDIR_LIBS) \
@@ -710,33 +708,33 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-alphablend.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-audio_decoder.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-audio_out.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-broadcaster.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-buffer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-buffer_types.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-configfile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-demux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-events.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-info_helper.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-input_cache.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-input_rip.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-io_helper.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-load_plugins.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-metronom.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-osd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-post.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-refcounter.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-resample.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-scratch.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-spu.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-video_decoder.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-video_out.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-video_overlay.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-vo_scale.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-xine.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libxine_la-xine_interface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alphablend.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/audio_decoder.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/audio_out.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/broadcaster.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_types.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/events.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/info_helper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_cache.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/input_rip.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/io_helper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/load_plugins.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/metronom.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/osd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/post.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/refcounter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resample.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scratch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spu.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/video_decoder.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/video_out.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/video_overlay.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vo_scale.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xine.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xine_interface.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -758,195 +756,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-libxine_la-xine.lo: xine.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-xine.lo -MD -MP -MF $(DEPDIR)/libxine_la-xine.Tpo -c -o libxine_la-xine.lo `test -f 'xine.c' || echo '$(srcdir)/'`xine.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-xine.Tpo $(DEPDIR)/libxine_la-xine.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='xine.c' object='libxine_la-xine.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-xine.lo `test -f 'xine.c' || echo '$(srcdir)/'`xine.c
-
-libxine_la-metronom.lo: metronom.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-metronom.lo -MD -MP -MF $(DEPDIR)/libxine_la-metronom.Tpo -c -o libxine_la-metronom.lo `test -f 'metronom.c' || echo '$(srcdir)/'`metronom.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-metronom.Tpo $(DEPDIR)/libxine_la-metronom.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='metronom.c' object='libxine_la-metronom.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-metronom.lo `test -f 'metronom.c' || echo '$(srcdir)/'`metronom.c
-
-libxine_la-configfile.lo: configfile.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-configfile.lo -MD -MP -MF $(DEPDIR)/libxine_la-configfile.Tpo -c -o libxine_la-configfile.lo `test -f 'configfile.c' || echo '$(srcdir)/'`configfile.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-configfile.Tpo $(DEPDIR)/libxine_la-configfile.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='configfile.c' object='libxine_la-configfile.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-configfile.lo `test -f 'configfile.c' || echo '$(srcdir)/'`configfile.c
-
-libxine_la-buffer.lo: buffer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-buffer.lo -MD -MP -MF $(DEPDIR)/libxine_la-buffer.Tpo -c -o libxine_la-buffer.lo `test -f 'buffer.c' || echo '$(srcdir)/'`buffer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-buffer.Tpo $(DEPDIR)/libxine_la-buffer.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='buffer.c' object='libxine_la-buffer.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-buffer.lo `test -f 'buffer.c' || echo '$(srcdir)/'`buffer.c
-
-libxine_la-load_plugins.lo: load_plugins.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-load_plugins.lo -MD -MP -MF $(DEPDIR)/libxine_la-load_plugins.Tpo -c -o libxine_la-load_plugins.lo `test -f 'load_plugins.c' || echo '$(srcdir)/'`load_plugins.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-load_plugins.Tpo $(DEPDIR)/libxine_la-load_plugins.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='load_plugins.c' object='libxine_la-load_plugins.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-load_plugins.lo `test -f 'load_plugins.c' || echo '$(srcdir)/'`load_plugins.c
-
-libxine_la-video_decoder.lo: video_decoder.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-video_decoder.lo -MD -MP -MF $(DEPDIR)/libxine_la-video_decoder.Tpo -c -o libxine_la-video_decoder.lo `test -f 'video_decoder.c' || echo '$(srcdir)/'`video_decoder.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-video_decoder.Tpo $(DEPDIR)/libxine_la-video_decoder.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='video_decoder.c' object='libxine_la-video_decoder.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-video_decoder.lo `test -f 'video_decoder.c' || echo '$(srcdir)/'`video_decoder.c
-
-libxine_la-buffer_types.lo: buffer_types.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-buffer_types.lo -MD -MP -MF $(DEPDIR)/libxine_la-buffer_types.Tpo -c -o libxine_la-buffer_types.lo `test -f 'buffer_types.c' || echo '$(srcdir)/'`buffer_types.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-buffer_types.Tpo $(DEPDIR)/libxine_la-buffer_types.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='buffer_types.c' object='libxine_la-buffer_types.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-buffer_types.lo `test -f 'buffer_types.c' || echo '$(srcdir)/'`buffer_types.c
-
-libxine_la-audio_decoder.lo: audio_decoder.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-audio_decoder.lo -MD -MP -MF $(DEPDIR)/libxine_la-audio_decoder.Tpo -c -o libxine_la-audio_decoder.lo `test -f 'audio_decoder.c' || echo '$(srcdir)/'`audio_decoder.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-audio_decoder.Tpo $(DEPDIR)/libxine_la-audio_decoder.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='audio_decoder.c' object='libxine_la-audio_decoder.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-audio_decoder.lo `test -f 'audio_decoder.c' || echo '$(srcdir)/'`audio_decoder.c
-
-libxine_la-video_out.lo: video_out.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-video_out.lo -MD -MP -MF $(DEPDIR)/libxine_la-video_out.Tpo -c -o libxine_la-video_out.lo `test -f 'video_out.c' || echo '$(srcdir)/'`video_out.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-video_out.Tpo $(DEPDIR)/libxine_la-video_out.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='video_out.c' object='libxine_la-video_out.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-video_out.lo `test -f 'video_out.c' || echo '$(srcdir)/'`video_out.c
-
-libxine_la-audio_out.lo: audio_out.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-audio_out.lo -MD -MP -MF $(DEPDIR)/libxine_la-audio_out.Tpo -c -o libxine_la-audio_out.lo `test -f 'audio_out.c' || echo '$(srcdir)/'`audio_out.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-audio_out.Tpo $(DEPDIR)/libxine_la-audio_out.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='audio_out.c' object='libxine_la-audio_out.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-audio_out.lo `test -f 'audio_out.c' || echo '$(srcdir)/'`audio_out.c
-
-libxine_la-resample.lo: resample.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-resample.lo -MD -MP -MF $(DEPDIR)/libxine_la-resample.Tpo -c -o libxine_la-resample.lo `test -f 'resample.c' || echo '$(srcdir)/'`resample.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-resample.Tpo $(DEPDIR)/libxine_la-resample.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='resample.c' object='libxine_la-resample.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-resample.lo `test -f 'resample.c' || echo '$(srcdir)/'`resample.c
-
-libxine_la-events.lo: events.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-events.lo -MD -MP -MF $(DEPDIR)/libxine_la-events.Tpo -c -o libxine_la-events.lo `test -f 'events.c' || echo '$(srcdir)/'`events.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-events.Tpo $(DEPDIR)/libxine_la-events.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='libxine_la-events.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-events.lo `test -f 'events.c' || echo '$(srcdir)/'`events.c
-
-libxine_la-video_overlay.lo: video_overlay.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-video_overlay.lo -MD -MP -MF $(DEPDIR)/libxine_la-video_overlay.Tpo -c -o libxine_la-video_overlay.lo `test -f 'video_overlay.c' || echo '$(srcdir)/'`video_overlay.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-video_overlay.Tpo $(DEPDIR)/libxine_la-video_overlay.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='video_overlay.c' object='libxine_la-video_overlay.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-video_overlay.lo `test -f 'video_overlay.c' || echo '$(srcdir)/'`video_overlay.c
-
-libxine_la-osd.lo: osd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-osd.lo -MD -MP -MF $(DEPDIR)/libxine_la-osd.Tpo -c -o libxine_la-osd.lo `test -f 'osd.c' || echo '$(srcdir)/'`osd.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-osd.Tpo $(DEPDIR)/libxine_la-osd.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='osd.c' object='libxine_la-osd.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-osd.lo `test -f 'osd.c' || echo '$(srcdir)/'`osd.c
-
-libxine_la-spu.lo: spu.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-spu.lo -MD -MP -MF $(DEPDIR)/libxine_la-spu.Tpo -c -o libxine_la-spu.lo `test -f 'spu.c' || echo '$(srcdir)/'`spu.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-spu.Tpo $(DEPDIR)/libxine_la-spu.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='spu.c' object='libxine_la-spu.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-spu.lo `test -f 'spu.c' || echo '$(srcdir)/'`spu.c
-
-libxine_la-scratch.lo: scratch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-scratch.lo -MD -MP -MF $(DEPDIR)/libxine_la-scratch.Tpo -c -o libxine_la-scratch.lo `test -f 'scratch.c' || echo '$(srcdir)/'`scratch.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-scratch.Tpo $(DEPDIR)/libxine_la-scratch.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='scratch.c' object='libxine_la-scratch.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-scratch.lo `test -f 'scratch.c' || echo '$(srcdir)/'`scratch.c
-
-libxine_la-demux.lo: demux.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-demux.lo -MD -MP -MF $(DEPDIR)/libxine_la-demux.Tpo -c -o libxine_la-demux.lo `test -f 'demux.c' || echo '$(srcdir)/'`demux.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-demux.Tpo $(DEPDIR)/libxine_la-demux.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='demux.c' object='libxine_la-demux.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-demux.lo `test -f 'demux.c' || echo '$(srcdir)/'`demux.c
-
-libxine_la-vo_scale.lo: vo_scale.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-vo_scale.lo -MD -MP -MF $(DEPDIR)/libxine_la-vo_scale.Tpo -c -o libxine_la-vo_scale.lo `test -f 'vo_scale.c' || echo '$(srcdir)/'`vo_scale.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-vo_scale.Tpo $(DEPDIR)/libxine_la-vo_scale.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vo_scale.c' object='libxine_la-vo_scale.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-vo_scale.lo `test -f 'vo_scale.c' || echo '$(srcdir)/'`vo_scale.c
-
-libxine_la-xine_interface.lo: xine_interface.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-xine_interface.lo -MD -MP -MF $(DEPDIR)/libxine_la-xine_interface.Tpo -c -o libxine_la-xine_interface.lo `test -f 'xine_interface.c' || echo '$(srcdir)/'`xine_interface.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-xine_interface.Tpo $(DEPDIR)/libxine_la-xine_interface.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='xine_interface.c' object='libxine_la-xine_interface.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-xine_interface.lo `test -f 'xine_interface.c' || echo '$(srcdir)/'`xine_interface.c
-
-libxine_la-post.lo: post.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-post.lo -MD -MP -MF $(DEPDIR)/libxine_la-post.Tpo -c -o libxine_la-post.lo `test -f 'post.c' || echo '$(srcdir)/'`post.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-post.Tpo $(DEPDIR)/libxine_la-post.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='post.c' object='libxine_la-post.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-post.lo `test -f 'post.c' || echo '$(srcdir)/'`post.c
-
-libxine_la-broadcaster.lo: broadcaster.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-broadcaster.lo -MD -MP -MF $(DEPDIR)/libxine_la-broadcaster.Tpo -c -o libxine_la-broadcaster.lo `test -f 'broadcaster.c' || echo '$(srcdir)/'`broadcaster.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-broadcaster.Tpo $(DEPDIR)/libxine_la-broadcaster.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='broadcaster.c' object='libxine_la-broadcaster.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-broadcaster.lo `test -f 'broadcaster.c' || echo '$(srcdir)/'`broadcaster.c
-
-libxine_la-io_helper.lo: io_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-io_helper.lo -MD -MP -MF $(DEPDIR)/libxine_la-io_helper.Tpo -c -o libxine_la-io_helper.lo `test -f 'io_helper.c' || echo '$(srcdir)/'`io_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-io_helper.Tpo $(DEPDIR)/libxine_la-io_helper.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='io_helper.c' object='libxine_la-io_helper.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-io_helper.lo `test -f 'io_helper.c' || echo '$(srcdir)/'`io_helper.c
-
-libxine_la-input_rip.lo: input_rip.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-input_rip.lo -MD -MP -MF $(DEPDIR)/libxine_la-input_rip.Tpo -c -o libxine_la-input_rip.lo `test -f 'input_rip.c' || echo '$(srcdir)/'`input_rip.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-input_rip.Tpo $(DEPDIR)/libxine_la-input_rip.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='input_rip.c' object='libxine_la-input_rip.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-input_rip.lo `test -f 'input_rip.c' || echo '$(srcdir)/'`input_rip.c
-
-libxine_la-input_cache.lo: input_cache.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-input_cache.lo -MD -MP -MF $(DEPDIR)/libxine_la-input_cache.Tpo -c -o libxine_la-input_cache.lo `test -f 'input_cache.c' || echo '$(srcdir)/'`input_cache.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-input_cache.Tpo $(DEPDIR)/libxine_la-input_cache.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='input_cache.c' object='libxine_la-input_cache.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-input_cache.lo `test -f 'input_cache.c' || echo '$(srcdir)/'`input_cache.c
-
-libxine_la-info_helper.lo: info_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-info_helper.lo -MD -MP -MF $(DEPDIR)/libxine_la-info_helper.Tpo -c -o libxine_la-info_helper.lo `test -f 'info_helper.c' || echo '$(srcdir)/'`info_helper.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-info_helper.Tpo $(DEPDIR)/libxine_la-info_helper.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='info_helper.c' object='libxine_la-info_helper.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-info_helper.lo `test -f 'info_helper.c' || echo '$(srcdir)/'`info_helper.c
-
-libxine_la-refcounter.lo: refcounter.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-refcounter.lo -MD -MP -MF $(DEPDIR)/libxine_la-refcounter.Tpo -c -o libxine_la-refcounter.lo `test -f 'refcounter.c' || echo '$(srcdir)/'`refcounter.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-refcounter.Tpo $(DEPDIR)/libxine_la-refcounter.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='refcounter.c' object='libxine_la-refcounter.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-refcounter.lo `test -f 'refcounter.c' || echo '$(srcdir)/'`refcounter.c
-
-libxine_la-alphablend.lo: alphablend.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -MT libxine_la-alphablend.lo -MD -MP -MF $(DEPDIR)/libxine_la-alphablend.Tpo -c -o libxine_la-alphablend.lo `test -f 'alphablend.c' || echo '$(srcdir)/'`alphablend.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libxine_la-alphablend.Tpo $(DEPDIR)/libxine_la-alphablend.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alphablend.c' object='libxine_la-alphablend.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxine_la_CFLAGS) $(CFLAGS) -c -o libxine_la-alphablend.lo `test -f 'alphablend.c' || echo '$(srcdir)/'`alphablend.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
